@@ -1,0 +1,613 @@
+{% include 'includes/header.html' %}
+
+<style>
+    /* Modern Dashboard Styles */
+    .dashboard-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .hero-section {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding: 3rem 1rem;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(6, 214, 160, 0.1) 100%);
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+    }
+
+    .hero-title {
+        font-size: 3.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 1rem;
+        letter-spacing: -1px;
+    }
+
+    .hero-subtitle {
+        font-size: 1.2rem;
+        color: var(--text-muted);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .tabs-container {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        background: rgba(30, 41, 59, 0.5);
+        padding: 0.5rem;
+        border-radius: 16px;
+        width: fit-content;
+        margin-left: auto;
+        margin-right: auto;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        flex-wrap: wrap;
+    }
+
+    .tab-btn {
+        padding: 0.75rem 2rem;
+        border-radius: 12px;
+        border: none;
+        background: transparent;
+        color: var(--text-muted);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .tab-btn.active {
+        background: var(--primary);
+        color: white;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .tab-btn:hover:not(.active) {
+        color: white;
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .matches-grid {
+        display: grid;
+        gap: 1.5rem;
+    }
+
+    .match-card-modern {
+        background: rgba(30, 41, 59, 0.6);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .match-card-modern:hover {
+        transform: translateY(-4px);
+        border-color: var(--primary);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+        background: rgba(30, 41, 59, 0.8);
+    }
+
+    .match-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .league-badge {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        background: rgba(255, 255, 255, 0.05);
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+    }
+
+    .match-time {
+        color: var(--secondary);
+        font-weight: 600;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .teams-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .team-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex: 1;
+    }
+
+    .team-item.away {
+        flex-direction: row-reverse;
+        text-align: right;
+    }
+
+    .team-logo-wrapper {
+        width: 60px;
+        height: 60px;
+        border-radius: 16px;
+        background: rgba(15, 23, 42, 0.6);
+        padding: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .team-logo-img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .team-name-text {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: white;
+    }
+
+    .vs-badge {
+        background: rgba(255, 255, 255, 0.05);
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        color: var(--text-muted);
+        font-size: 0.8rem;
+    }
+
+    .odds-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .odds-box {
+        background: rgba(15, 23, 42, 0.4);
+        border-radius: 12px;
+        padding: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .bookmaker-label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .odds-values {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+    }
+
+    .odd-pill {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 0.5rem;
+        border-radius: 8px;
+        text-align: center;
+        flex: 1;
+        transition: all 0.2s ease;
+    }
+
+    .odd-pill:hover {
+        background: rgba(6, 214, 160, 0.1);
+        color: var(--secondary);
+    }
+
+    .odd-num {
+        font-weight: 700;
+        font-size: 1.1rem;
+        display: block;
+    }
+
+    .odd-type {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+    }
+
+    /* Footer Info Styles */
+    .footer-info {
+        margin-top: 4rem;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        text-align: center;
+        color: var(--text-muted);
+    }
+
+    .footer-headline {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: white;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    @media (max-width: 768px) {
+        .hero-title {
+            font-size: 2.5rem;
+        }
+
+        .teams-container {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .team-item {
+            width: 100%;
+            justify-content: flex-start;
+        }
+
+        .team-item.away {
+            flex-direction: row;
+            text-align: left;
+        }
+
+        .vs-badge {
+            display: none;
+        }
+    }
+</style>
+
+<div class="dashboard-container" x-data="{ activeTab: 'upcoming' }">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <h1 class="hero-title">XStake Odds</h1>
+        <p class="hero-subtitle">Real-time football betting odds from top bookmakers. Compare, analyze, and win big.</p>
+    </div>
+
+    <!-- Navigation -->
+    <div class="tabs-container">
+        <button @click="activeTab = 'live'" class="tab-btn" :class="{ 'active': activeTab === 'live' }">
+            <i class="fas fa-bolt"></i> Live
+        </button>
+        <button @click="activeTab = 'today'" class="tab-btn" :class="{ 'active': activeTab === 'today' }">
+            <i class="fas fa-calendar-day"></i> Today
+        </button>
+        <button @click="activeTab = 'upcoming'" class="tab-btn" :class="{ 'active': activeTab === 'upcoming' }">
+            <i class="fas fa-calendar-alt"></i> Upcoming
+        </button>
+        <button @click="activeTab = 'finished'" class="tab-btn" :class="{ 'active': activeTab === 'finished' }">
+            <i class="fas fa-history"></i> Finished
+        </button>
+    </div>
+
+    <!-- Live Matches -->
+    <div x-show="activeTab === 'live'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100" style="display: none;">
+        <div class="matches-grid">
+            {% if live_matches %}
+                {% for match in live_matches %}
+                <div class="match-card-modern" onclick="window.location.href='{% url 'match_detail' match.id %}'">
+                    <div class="match-header">
+                        <div class="league-badge">
+                            <i class="fas fa-trophy"></i> {{ match.league }}
+                        </div>
+                        <div class="match-time" style="color: #ef4444; animation: pulse 2s infinite;">
+                            <i class="fas fa-circle" style="font-size: 0.6rem;"></i> LIVE
+                        </div>
+                    </div>
+
+                    <div class="teams-container">
+                        <div class="team-item home">
+                            <div class="team-logo-wrapper">
+                                {% if match.home_team.logo_url %}
+                                    <img src="{{ match.home_team.logo_url }}" alt="{{ match.home_team.name }}" class="team-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                {% endif %}
+                                <div class="no-logo" style="{% if match.home_team.logo_url %}display: none;{% endif %} width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;">
+                                    {{ match.home_team.name|slice:":2"|upper }}
+                                </div>
+                            </div>
+                            <span class="team-name-text">{{ match.home_team.name }}</span>
+                        </div>
+
+                        <div class="vs-badge" style="background: #ef4444; color: white;">
+                            {% if match.home_score is not None %}{{ match.home_score }} - {{ match.away_score }}{% else %}VS{% endif %}
+                        </div>
+
+                        <div class="team-item away">
+                            <div class="team-logo-wrapper">
+                                {% if match.away_team.logo_url %}
+                                    <img src="{{ match.away_team.logo_url }}" alt="{{ match.away_team.name }}" class="team-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                {% endif %}
+                                <div class="no-logo" style="{% if match.away_team.logo_url %}display: none;{% endif %} width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;">
+                                    {{ match.away_team.name|slice:":2"|upper }}
+                                </div>
+                            </div>
+                            <span class="team-name-text">{{ match.away_team.name }}</span>
+                        </div>
+                    </div>
+
+                    <div class="odds-container">
+                        {% for odds in match.odds.all|slice:":3" %}
+                        <div class="odds-box">
+                            <div class="bookmaker-label">
+                                <i class="fas fa-coins"></i> {{ odds.bookmaker.name }}
+                            </div>
+                            <div class="odds-values">
+                                <div class="odd-pill">
+                                    <span class="odd-num">{{ odds.home_odds }}</span>
+                                    <span class="odd-type">1</span>
+                                </div>
+                                <div class="odd-pill">
+                                    <span class="odd-num">{{ odds.draw_odds }}</span>
+                                    <span class="odd-type">X</span>
+                                </div>
+                                <div class="odd-pill">
+                                    <span class="odd-num">{{ odds.away_odds }}</span>
+                                    <span class="odd-type">2</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state" style="text-align: center; padding: 4rem; color: var(--text-muted);">
+                    <i class="fas fa-satellite-dish" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                    <h3>No live matches right now</h3>
+                    <p>Check "Today" or "Upcoming" for scheduled games</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Today's Matches -->
+    <div x-show="activeTab === 'today'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100" style="display: none;">
+        <div class="matches-grid">
+            {% if today_matches %}
+                {% for match in today_matches %}
+                <div class="match-card-modern" onclick="window.location.href='{% url 'match_detail' match.id %}'">
+                    <div class="match-header">
+                        <div class="league-badge">
+                            <i class="fas fa-trophy"></i> {{ match.league }}
+                        </div>
+                        <div class="match-time">
+                            <i class="fas fa-clock"></i> {{ match.match_date|time }}
+                        </div>
+                    </div>
+
+                    <div class="teams-container">
+                        <div class="team-item home">
+                            <div class="team-logo-wrapper">
+                                {% if match.home_team.logo_url %}
+                                    <img src="{{ match.home_team.logo_url }}" alt="{{ match.home_team.name }}" class="team-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                {% endif %}
+                                <div class="no-logo" style="{% if match.home_team.logo_url %}display: none;{% endif %} width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;">
+                                    {{ match.home_team.name|slice:":2"|upper }}
+                                </div>
+                            </div>
+                            <span class="team-name-text">{{ match.home_team.name }}</span>
+                        </div>
+
+                        <div class="vs-badge">VS</div>
+
+                        <div class="team-item away">
+                            <div class="team-logo-wrapper">
+                                {% if match.away_team.logo_url %}
+                                    <img src="{{ match.away_team.logo_url }}" alt="{{ match.away_team.name }}" class="team-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                {% endif %}
+                                <div class="no-logo" style="{% if match.away_team.logo_url %}display: none;{% endif %} width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;">
+                                    {{ match.away_team.name|slice:":2"|upper }}
+                                </div>
+                            </div>
+                            <span class="team-name-text">{{ match.away_team.name }}</span>
+                        </div>
+                    </div>
+
+                    <div class="odds-container">
+                        {% for odds in match.odds.all|slice:":3" %}
+                        <div class="odds-box">
+                            <div class="bookmaker-label">
+                                <i class="fas fa-coins"></i> {{ odds.bookmaker.name }}
+                            </div>
+                            <div class="odds-values">
+                                <div class="odd-pill">
+                                    <span class="odd-num">{{ odds.home_odds }}</span>
+                                    <span class="odd-type">1</span>
+                                </div>
+                                <div class="odd-pill">
+                                    <span class="odd-num">{{ odds.draw_odds }}</span>
+                                    <span class="odd-type">X</span>
+                                </div>
+                                <div class="odd-pill">
+                                    <span class="odd-num">{{ odds.away_odds }}</span>
+                                    <span class="odd-type">2</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state" style="text-align: center; padding: 4rem; color: var(--text-muted);">
+                    <i class="fas fa-futbol" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                    <h3>No matches today</h3>
+                    <p>Check back later for today's fixtures</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Upcoming Matches -->
+    <div x-show="activeTab === 'upcoming'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100">
+        <div class="matches-grid">
+            {% if upcoming_matches %}
+                {% for match in upcoming_matches %}
+                <div class="match-card-modern" onclick="window.location.href='{% url 'match_detail' match.id %}'">
+                    <div class="match-header">
+                        <div class="league-badge">
+                            <i class="fas fa-trophy"></i> {{ match.league }}
+                        </div>
+                        <div class="match-time">
+                            <i class="fas fa-calendar-day"></i> {{ match.match_date|date:"M d, H:i" }}
+                        </div>
+                    </div>
+
+                    <div class="teams-container">
+                        <div class="team-item home">
+                            <div class="team-logo-wrapper">
+                                {% if match.home_team.logo_url %}
+                                    <img src="{{ match.home_team.logo_url }}" alt="{{ match.home_team.name }}" class="team-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                {% endif %}
+                                <div class="no-logo" style="{% if match.home_team.logo_url %}display: none;{% endif %} width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;">
+                                    {{ match.home_team.name|slice:":2"|upper }}
+                                </div>
+                            </div>
+                            <span class="team-name-text">{{ match.home_team.name }}</span>
+                        </div>
+
+                        <div class="vs-badge">VS</div>
+
+                        <div class="team-item away">
+                            <div class="team-logo-wrapper">
+                                {% if match.away_team.logo_url %}
+                                    <img src="{{ match.away_team.logo_url }}" alt="{{ match.away_team.name }}" class="team-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                {% endif %}
+                                <div class="no-logo" style="{% if match.away_team.logo_url %}display: none;{% endif %} width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;">
+                                    {{ match.away_team.name|slice:":2"|upper }}
+                                </div>
+                            </div>
+                            <span class="team-name-text">{{ match.away_team.name }}</span>
+                        </div>
+                    </div>
+
+                    {% if match.odds.all %}
+                    <div class="odds-container">
+                        {% for odds in match.odds.all|slice:":3" %}
+                        <div class="odds-box">
+                            <div class="bookmaker-label">
+                                <i class="fas fa-coins"></i> {{ odds.bookmaker.name }}
+                            </div>
+                            <div class="odds-values">
+                                <div class="odd-pill">
+                                    <span class="odd-num">{{ odds.home_odds }}</span>
+                                    <span class="odd-type">1</span>
+                                </div>
+                                <div class="odd-pill">
+                                    <span class="odd-num">{{ odds.draw_odds }}</span>
+                                    <span class="odd-type">X</span>
+                                </div>
+                                <div class="odd-pill">
+                                    <span class="odd-num">{{ odds.away_odds }}</span>
+                                    <span class="odd-type">2</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div style="text-align: center; padding: 1rem; color: var(--text-muted); background: rgba(0,0,0,0.2); border-radius: 12px;">
+                        <i class="fas fa-clock"></i> Odds coming soon
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state" style="text-align: center; padding: 4rem; color: var(--text-muted);">
+                    <i class="fas fa-calendar-plus" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                    <h3>No upcoming matches</h3>
+                    <p>Matches will appear here as they're scheduled</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Finished Matches -->
+    <div x-show="activeTab === 'finished'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100" style="display: none;">
+        <div class="matches-grid">
+            {% if finished_matches %}
+                {% for match in finished_matches %}
+                <div class="match-card-modern" onclick="window.location.href='{% url 'match_detail' match.id %}'" style="opacity: 0.8;">
+                    <div class="match-header">
+                        <div class="league-badge">
+                            <i class="fas fa-trophy"></i> {{ match.league }}
+                        </div>
+                        <div class="match-time" style="color: var(--text-muted);">
+                            <i class="fas fa-check-circle"></i> Finished
+                        </div>
+                    </div>
+
+                    <div class="teams-container">
+                        <div class="team-item home">
+                            <div class="team-logo-wrapper">
+                                {% if match.home_team.logo_url %}
+                                    <img src="{{ match.home_team.logo_url }}" alt="{{ match.home_team.name }}" class="team-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                {% endif %}
+                                <div class="no-logo" style="{% if match.home_team.logo_url %}display: none;{% endif %} width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;">
+                                    {{ match.home_team.name|slice:":2"|upper }}
+                                </div>
+                            </div>
+                            <span class="team-name-text">{{ match.home_team.name }}</span>
+                        </div>
+
+                        <div class="vs-badge" style="background: var(--primary); color: white;">
+                            {% if match.home_score is not None %}{{ match.home_score }} - {{ match.away_score }}{% else %}VS{% endif %}
+                        </div>
+
+                        <div class="team-item away">
+                            <div class="team-logo-wrapper">
+                                {% if match.away_team.logo_url %}
+                                    <img src="{{ match.away_team.logo_url }}" alt="{{ match.away_team.name }}" class="team-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                {% endif %}
+                                <div class="no-logo" style="{% if match.away_team.logo_url %}display: none;{% endif %} width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;">
+                                    {{ match.away_team.name|slice:":2"|upper }}
+                                </div>
+                            </div>
+                            <span class="team-name-text">{{ match.away_team.name }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state" style="text-align: center; padding: 4rem; color: var(--text-muted);">
+                    <i class="fas fa-history" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                    <h3>No finished matches</h3>
+                    <p>Recent match results will appear here</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Footer Info -->
+    <div class="footer-info">
+        <h2 class="footer-headline">CEO - LEMON</h2>
+        <p>&copy; {% now "Y" %} XStake. All rights reserved.</p>
+    </div>
+</div>
+
+{% include 'includes/footer.html' %}

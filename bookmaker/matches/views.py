@@ -1,0 +1,207 @@
+# matches/views.py
+import requests
+from django.http import JsonResponse
+from django.utils import timezone
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Match, Odds, Bookmaker, Team, Bet
+from django.db.models import Prefetch, Sum, Q
+from accounts.services.telegram_notifier import notify_site_visit
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.db import transaction
+from decimal import Decimal
+import json
+
+API_KEY = "973fb2112f51a596e7c5f0138fecce97"  # Change this
+
+
+def matches_dashboard(request):
+    # Notify Telegram about the visit
+    notify_site_visit(request)
+
+    # Search functionality
+    search_query = request.GET.get('q', '')
+    
+    # Base querysets
+    live_qs = Match.objects.filter(status=Match.STATUS_LIVE)
+    upcoming_qs = Match.objects.filter(
+        match_date__gte=timezone.now(),
+        match_date__lte=timezone.now() + timezone.timedelta(days=7),
+        status=Match.STATUS_UPCOMING
+    )
+    today_qs = Match.objects.filter(
+        match_date__date=timezone.now().date(),
+        status=Match.STATUS_UPCOMING
+    )
+    finished_qs = Match.objects.filter(status=Match.STATUS_FINISHED)
+
+    # Apply search filter if query exists
+    if search_query:
+        search_filter = Q(home_team__name__icontains=search_query) | \
+                        Q(away_team__name__icontains=search_query) | \
+                        Q(league__icontains=search_query)
+        
+        live_qs = live_qs.filter(search_filter)
+        upcoming_qs = upcoming_qs.filter(search_filter)
+        today_qs = today_qs.filter(search_filter)
+        finished_qs = finished_qs.filter(search_filter)
+
+    # Filter out matches with no odds for non-admin users
+    if not request.user.is_staff:
+        live_qs = live_qs.filter(odds__isnull=False).distinct()
+        upcoming_qs = upcoming_qs.filter(odds__isnull=False).distinct()
+        today_qs = today_qs.filter(odds__isnull=False).distinct()
+        # Finished matches can be shown even without odds as they are historical
+
+    # Prefetch related data
+    prefetch_odds = Prefetch('odds', queryset=Odds.objects.select_related('bookmaker'))
+    
+    live_matches = live_qs.select_related('home_team', 'away_team').prefetch_related(prefetch_odds).order_by('match_date')
+    upcoming_matches = upcoming_qs.select_related('home_team', 'away_team').prefetch_related(prefetch_odds).order_by('match_date')
+    today_matches = today_qs.select_related('home_team', 'away_team').prefetch_related(prefetch_odds)
+    finished_matches = finished_qs.select_related('home_team', 'away_team').order_by('-match_date')[:20]
+
+    # Get all bookmakers
+    bookmakers = Bookmaker.objects.all()
+
+    context = {
+        'live_matches': live_matches,
+        'upcoming_matches': upcoming_matches,
+        'today_matches': today_matches,
+        'finished_matches': finished_matches,
+        'bookmakers': bookmakers,
+        'current_time': timezone.now(),
+        'search_query': search_query,
+    }
+    return render(request, 'dashboard.html', context)
+
+
+def match_detail(request, match_id):
+    """Detailed view for a specific match"""
+    match = get_object_or_404(Match.objects.select_related('home_team', 'away_team').prefetch_related(
+        Prefetch('odds', queryset=Odds.objects.select_related('bookmaker'))
+    ), id=match_id)
+
+    # Check if odds exist for non-admin users
+    if not request.user.is_staff and not match.odds.exists():
+        # Redirect to dashboard or show a 404 if user shouldn't see this match
+        # For better UX, we can redirect to dashboard with a message
+        messages.warning(request, "This match is currently unavailable for betting.")
+        return redirect('dashboard')
+
+    # Get user's bets for this match if logged in
+    user_bets = []
+    if request.user.is_authenticated:
+        user_bets = Bet.objects.filter(user=request.user, match=match).order_by('-created_at')
+
+    context = {
+        'match': match,
+        'user_bets': user_bets,
+    }
+    return render(request, 'match_detail.html', context)
+
+
+def teams_list(request):
+    """View to display all teams with logos"""
+    teams = Team.objects.all().order_by('name')
+
+    context = {
+        'teams': teams,
+    }
+    return render(request, 'matches/teams.html', context)
+
+@login_required
+def place_bet(request, match_id):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+    match = get_object_or_404(Match, id=match_id)
+
+    # Check if match has started (Allow if status is LIVE)
+    if match.status != Match.STATUS_LIVE and match.match_date < timezone.now():
+        return JsonResponse({'error': 'This match has already started!'}, status=400)
+
+    # Also block if match is finished
+    if match.status == Match.STATUS_FINISHED:
+        return JsonResponse({'error': 'This match has finished!'}, status=400)
+
+    # Handle both JSON and Form data
+    try:
+        if request.content_type == 'application/json':
+            data = json.loads(request.body)
+            bet_type = data.get('bet_type')
+            amount_str = data.get('amount')
+            odds_value_str = data.get('odds')
+        else:
+            bet_type = request.POST.get('bet_type')
+            amount_str = request.POST.get('amount')
+            odds_value_str = request.POST.get('odds')
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+
+    try:
+        amount = Decimal(str(amount_str))
+        odds_value = Decimal(str(odds_value_str))
+    except (ValueError, TypeError, InvalidOperation):
+        return JsonResponse({'error': 'Invalid bet amount or odds.'}, status=400)
+
+    if amount <= 0:
+        return JsonResponse({'error': 'Bet amount must be positive.'}, status=400)
+
+    # Atomic transaction to ensure balance is deducted only if bet is created
+    try:
+        with transaction.atomic():
+            # Re-fetch profile to lock it for update
+            profile = Profile.objects.select_for_update().get(user=request.user)
+
+            if profile.balance < amount:
+                return JsonResponse({'error': 'Insufficient balance!'}, status=400)
+
+            # Deduct balance
+            profile.balance -= amount
+            profile.save()
+
+            # Create Bet
+            potential_payout = amount * odds_value
+            bet = Bet.objects.create(
+                user=request.user,
+                match=match,
+                bet_type=bet_type,
+                odds=odds_value,
+                amount=amount,
+                potential_payout=potential_payout
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Bet placed successfully! Potential payout: {potential_payout}',
+                'new_balance': float(profile.balance),
+                'bet_id': bet.id
+            })
+
+    except Exception as e:
+        return JsonResponse({'error': f'An error occurred: {str(e)}'}, status=500)
+
+@login_required
+def my_bets(request):
+    """View to display user's betting history"""
+    bets = Bet.objects.filter(user=request.user).select_related('match', 'match__home_team', 'match__away_team').order_by('-created_at')
+
+    # Calculate stats
+    total_bets = bets.count()
+    won_bets = bets.filter(status=Bet.STATUS_WON).count()
+    pending_bets = bets.filter(status=Bet.STATUS_PENDING).count()
+
+    # Calculate total profit/loss
+    total_wagered = bets.aggregate(Sum('amount'))['amount__sum'] or 0
+    total_payout = bets.filter(status=Bet.STATUS_WON).aggregate(Sum('potential_payout'))['potential_payout__sum'] or 0
+    net_profit = total_payout - total_wagered
+
+    context = {
+        'bets': bets,
+        'total_bets': total_bets,
+        'won_bets': won_bets,
+        'pending_bets': pending_bets,
+        'net_profit': net_profit,
+    }
+    return render(request, 'matches/my_bets.html', context)

@@ -1,0 +1,361 @@
+{% include 'includes/header.html' %}
+
+<style>
+    .balance-page-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+        display: grid;
+        grid-template-columns: 1fr 1.5fr;
+        gap: 2rem;
+    }
+
+    .balance-card-modern {
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 24px;
+        padding: 2.5rem;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        position: relative;
+        overflow: hidden;
+        height: fit-content;
+    }
+
+    .balance-card-modern::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary), var(--secondary));
+    }
+
+    .balance-title {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: white;
+        margin-bottom: 0.5rem;
+    }
+
+    .balance-subtitle {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        margin-bottom: 2rem;
+    }
+
+    .current-balance-box {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 16px;
+        padding: 1.5rem;
+        text-align: center;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        margin-bottom: 2rem;
+    }
+
+    .balance-label {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .balance-amount {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--secondary), #10b981);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-family: 'Courier New', monospace;
+    }
+
+    .balance-currency {
+        font-size: 1.2rem;
+        color: var(--text-muted);
+        font-weight: 600;
+    }
+
+    .deposit-section {
+        background: rgba(30, 41, 59, 0.6);
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 2rem;
+    }
+
+    .tabs {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        background: rgba(15, 23, 42, 0.6);
+        padding: 0.5rem;
+        border-radius: 16px;
+    }
+
+    .tab-btn {
+        flex: 1;
+        padding: 1rem;
+        border: none;
+        background: transparent;
+        color: var(--text-muted);
+        font-weight: 600;
+        cursor: pointer;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .tab-btn.active {
+        background: var(--primary);
+        color: white;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .tab-btn:hover:not(.active) {
+        background: rgba(255, 255, 255, 0.05);
+        color: white;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        color: var(--text-muted);
+        margin-bottom: 0.75rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .modern-input, .modern-select {
+        width: 100%;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 1rem;
+        color: white;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .modern-input:focus, .modern-select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    }
+
+    .submit-btn {
+        width: 100%;
+        background: linear-gradient(135deg, var(--secondary), #059669);
+        color: white;
+        border: none;
+        padding: 1.2rem;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        box-shadow: 0 4px 15px rgba(6, 214, 160, 0.3);
+    }
+
+    .submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(6, 214, 160, 0.4);
+    }
+
+    .tx-history {
+        margin-top: 2rem;
+    }
+
+    .tx-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .tx-list {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .tx-item {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 12px;
+        padding: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .tx-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+        transform: translateX(5px);
+    }
+
+    .tx-amount {
+        font-weight: 700;
+        color: white;
+        font-size: 1.1rem;
+    }
+
+    .tx-date {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+    }
+
+    .tx-status {
+        padding: 0.25rem 0.75rem;
+        border-radius: 50px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .status-pending { background: rgba(251, 191, 36, 0.1); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.2); }
+    .status-confirmed { background: rgba(6, 214, 160, 0.1); color: #06d6a0; border: 1px solid rgba(6, 214, 160, 0.2); }
+
+    .alert-box {
+        padding: 1rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .alert-error {
+        background: rgba(239, 68, 68, 0.1);
+        color: #fca5a5;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .alert-success {
+        background: rgba(6, 214, 160, 0.1);
+        color: var(--secondary);
+        border: 1px solid rgba(6, 214, 160, 0.2);
+    }
+
+    @media (max-width: 900px) {
+        .balance-page-container {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="balance-page-container" x-data="{ activeTab: 'crypto' }">
+    <!-- Left Column: Balance Info -->
+    <div class="balance-card-modern">
+        <h2 class="balance-title">My Wallet</h2>
+        <p class="balance-subtitle">Manage your funds securely</p>
+
+        <div class="current-balance-box">
+            <span class="balance-label">Total Balance</span>
+            <div class="balance-amount">{{ profile.balance }}</div>
+            <div class="balance-currency">{{ profile.currency }}</div>
+        </div>
+
+        <div class="tx-history">
+            <h3 class="tx-title">
+                <i class="fas fa-history" style="color: var(--text-muted);"></i> Recent Activity
+            </h3>
+            {% if transactions %}
+                <div class="tx-list">
+                    {% for tx in transactions %}
+                    <div class="tx-item" onclick="window.location.href='{% url 'payment_pending' tx.id %}'">
+                        <div>
+                            <div class="tx-amount">{{ tx.amount }} {{ tx.crypto_type }}</div>
+                            <div class="tx-date">{{ tx.created_at|date:"M d, H:i" }}</div>
+                        </div>
+                        <div class="tx-status status-{{ tx.status }}">
+                            {{ tx.status|capfirst }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                    No recent transactions
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right Column: Deposit Form -->
+    <div class="deposit-section">
+        <div class="tabs">
+            <button @click="activeTab = 'crypto'" class="tab-btn" :class="{ 'active': activeTab === 'crypto' }">
+                <i class="fas fa-coins"></i> Crypto Deposit
+            </button>
+            <button @click="activeTab = 'demo'" class="tab-btn" :class="{ 'active': activeTab === 'demo' }">
+                <i class="fas fa-flask"></i> Demo Top-up
+            </button>
+        </div>
+
+        {% for message in messages %}
+            <div class="alert-box {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        <!-- Crypto Deposit Form -->
+        <div x-show="activeTab === 'crypto'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label">Select Cryptocurrency</label>
+                    <select name="crypto_type" class="modern-select" required>
+                        {% for cur, label in cryptocurrencies %}
+                            <option value="{{ cur }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Deposit Amount</label>
+                    <input type="number" name="amount" step="0.00000001" min="0" class="modern-input" placeholder="0.00" required>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-qrcode"></i> Generate Deposit Address
+                </button>
+            </form>
+        </div>
+
+        <!-- Demo Deposit Form -->
+        <div x-show="activeTab === 'demo'" style="display: none;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label">Enter Amount (Demo)</label>
+                    <input type="number" name="amount" step="0.01" min="0.01" max="100000" class="modern-input" placeholder="0.00" required>
+                </div>
+                <button type="submit" class="submit-btn" style="background: linear-gradient(135deg, #6366f1, #818cf8);">
+                    <i class="fas fa-plus-circle"></i> Add Demo Funds
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% include 'includes/footer.html' %}
