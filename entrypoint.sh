@@ -19,5 +19,6 @@ echo "Starting Django Q cluster..."
 python manage.py qcluster &
 
 # Start Gunicorn
+# Added --forwarded-allow-ips="*" to trust X-Forwarded-For headers from Nginx
 echo "Starting Gunicorn..."
-exec gunicorn bookmaker.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120
+exec gunicorn bookmaker.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120 --forwarded-allow-ips="*"
