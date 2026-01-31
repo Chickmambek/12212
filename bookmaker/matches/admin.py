@@ -99,7 +99,7 @@ class MatchAdmin(admin.ModelAdmin):
     inlines = [OddsInline]
     actions = ['mark_as_live', 'mark_as_finished']
     readonly_fields = ('scraped_at', 'updated_at')
-    
+
     fieldsets = (
         ('Match Info', {
             'fields': ('home_team', 'away_team', 'league', 'match_date', 'status', 'match_url')

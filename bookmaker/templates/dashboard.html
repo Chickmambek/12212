@@ -545,16 +545,23 @@
 <div class="mobile-container" x-data="{
     activeTab: 'upcoming',
     touchStartX: 0,
-    touchStartY: 0
-}" @touchstart="touchStartX = $event.touches[0].clientX; touchStartY = $event.touches[0].clientY"
-    @touchmove.prevent="
-        const touchEndX = $event.touches[0].clientX;
-        const touchEndY = $event.touches[0].clientY;
-        const diffX = touchStartX - touchEndX;
-        const diffY = touchStartY - touchEndY;
+    touchStartY: 0,
+    isSwiping: false
+}" @touchstart="
+    touchStartX = $event.touches[0].clientX;
+    touchStartY = $event.touches[0].clientY;
+    isSwiping = false;
+" @touchmove="
+    const touchEndX = $event.touches[0].clientX;
+    const touchEndY = $event.touches[0].clientY;
+    const diffX = touchStartX - touchEndX;
+    const diffY = touchStartY - touchEndY;
 
-        // Only horizontal swipes with minimal vertical movement
-        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+    // Only handle horizontal swipes with minimal vertical movement
+    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 30) {
+        // This is a horizontal swipe - prevent vertical scroll interference
+        if (!isSwiping) {
+            isSwiping = true;
             const tabs = ['upcoming', 'today', 'live', 'finished'];
             const currentIndex = tabs.indexOf(activeTab);
 
@@ -565,9 +572,11 @@
                 // Swipe right
                 activeTab = tabs[currentIndex - 1];
             }
-            touchStartX = touchEndX;
         }
-    ">
+        // Don't prevent default - let the browser handle it
+    }
+    // For vertical scrolling, let the browser handle it normally
+">
 
     <!-- Mobile Header -->
     <header class="mobile-header">

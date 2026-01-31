@@ -25,6 +25,7 @@ urlpatterns = [
     path('dashboard/', include('admin_dashboard.urls')), # Custom Admin Dashboard
     path('', include('matches.urls')),
     path('accounts/', include('accounts.urls')),
+    path('admin21/scraper_module/', include('scraper_module.urls')),
 ]
 
 if settings.DEBUG:

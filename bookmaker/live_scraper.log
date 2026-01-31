@@ -1,0 +1,70 @@
+[2026-02-01 00:59:34] 🚀 STARTING: Live Matches Scraper is starting up...
+[2026-02-01 00:59:34] 🔥 RUNNING: Starting live matches monitoring...
+[2026-02-01 00:59:34] 🟢 Opening persistent connection to LIVE page: https://gstake.net/live/201
+[2026-02-01 00:59:36]    ✅ Page loaded. Starting live monitoring loop...
+[2026-02-01 00:59:36]    ⚠️ No live matches found on page.
+[2026-02-01 00:59:37] 🛑 STOPPING: Live Matches Scraper is stopping...
+[2026-02-01 00:59:41] 🛑 Stop signal received. Exiting live monitor loop.
+[2026-02-01 00:59:41] 🛑 Live scraper thread ended
+[2026-02-01 00:59:41] ✅ Live scraper stopped completely
+[2026-02-01 01:01:04] 🚀 STARTING: Live Matches Scraper is starting up...
+[2026-02-01 01:01:04] 🔥 RUNNING: Starting live matches monitoring...
+[2026-02-01 01:01:04] 🟢 Opening persistent connection to LIVE page: https://gstake.net/live/201
+[2026-02-01 01:01:06]    ✅ Page loaded. Starting live monitoring loop...
+[2026-02-01 01:01:06]    ⚠️ No live matches found on page.
+[2026-02-01 01:01:11]    📥 Found 51 live matches. Updating DB...
+[2026-02-01 01:01:11]       ⚽ CA Independiente Avellaneda 0-0 Velez Sarsfield ()
+[2026-02-01 01:01:11]       ⚽ Cucuta Deportivo 1-1 Fortaleza Zipaquira ()
+[2026-02-01 01:01:11]       ⚽ Atletico San Luis 0-0 Guadalajara ()
+[2026-02-01 01:01:11]       ⚽ Club Atlas 0-0 Mazatlan ()
+[2026-02-01 01:01:11]       ⚽ Club America 2-0 Club Necaxa ()
+[2026-02-01 01:01:11]       ⚽ Club Atletico Nacional SA 1-0 Inter Miami ()
+[2026-02-01 01:01:11]       ⚽ ABB 0-2 Always Ready ()
+[2026-02-01 01:01:11]       ⚽ Cruz Azul (Women) 1-1 Queretaro (Women) ()
+[2026-02-01 01:01:11]       ⚽ C.S.D. Municipal 0-0 Deportivo Guastatoya ()
+[2026-02-01 01:01:11]       ⚽ Deportivo Mixco 1-1 Coban Imperial ()
+[2026-02-01 01:01:11]       ⚽ Cobresal 1-0 Huachipato ()
+[2026-02-01 01:01:11]       ⚽ Club de Deportes Santa Cruz 0-0 Deportes Magallanes ()
+[2026-02-01 01:01:11]       ⚽ Deportes Copiapo 0-0 San Luis de Quillota ()
+[2026-02-01 01:01:11]       ⚽ Azucareros de Tezonapa 0-0 Ciervos II ()
+[2026-02-01 01:01:11]       ⚽ Cobras Premier 1-1 Delfines Baja ()
+[2026-02-01 01:01:11]       ⚽ Alebrijes de Oaxaca CDMX 0-1 Lobos Iteca ()
+[2026-02-01 01:01:11]       ⚽ Pabellon 1-0 Universidad Autonoma de Zacatecas II ()
+[2026-02-01 01:01:11]       ⚽ Fut Car 4-1 Cefor Promotora ()
+[2026-02-01 01:01:11]       ⚽ Atletico Real Morelos 2-2 Selva Canera ()
+[2026-02-01 01:01:11]       ⚽ Inter Fundadores Queretaro 1-1 IFAC ()
+[2026-02-01 01:01:11]       ⚽ Calor II 1-3 Gallos Nuevo Leon ()
+[2026-02-01 01:01:11]       ⚽ Montaneses II 3-2 Sozca ()
+[2026-02-01 01:01:11]       ⚽ Deportivo La Guaira 0-0 Monagas ()
+[2026-02-01 01:01:11]       ⚽ Point Fortin Civic 0-0 1976 Phoenix ()
+[2026-02-01 01:01:11]       ⚽ Barra 1-1 Santa Catarina ()
+[2026-02-01 01:01:11]       ⚽ Sertaozinho 0-0 Clube Atletico Linense ()
+[2026-02-01 01:01:11]       ⚽ Sao Jose Esporte Clube 1-1 Associacao Atletica Internacional ()
+[2026-02-01 01:01:11]       ⚽ Clube Atletico Votuporanguense 0-0 Gremio Prudente ()
+[2026-02-01 01:01:11]       ⚽ Real Madriz 0-0 Matagalpa ()
+[2026-02-01 01:01:11]       ⚽ Sebaco 1-0 Walter Ferreti ()
+[2026-02-01 01:01:11]       ⚽ Sporting JAX (Women) 0-0 Carolina Ascent (Women) ()
+[2026-02-01 01:01:11]       ⚽ Dallas Trinity (Women) 0-0 Brooklyn (Women) ()
+[2026-02-01 01:01:11]       ⚽ San Martin Del Este 0-0 Tauro II ()
+[2026-02-01 01:01:11]       ⚽ Newtown United 1-0 Sandy Point ()
+[2026-02-01 01:01:11]       ⚽ Castanhal EC 0-0 Santa Rosa ()
+[2026-02-01 01:01:11]       ⚽ Serra 0-0 Rio Branco-VN ()
+[2026-02-01 01:01:11]       ⚽ Marília Atletico Clube 0-0 Paulista Futebol Clube ()
+[2026-02-01 01:01:11]       ⚽ Nueva Santa Rosa 1-1 AFF Guatemala ()
+[2026-02-01 01:01:11]       ⚽ Sao Raimundo EC 2-1 Rio Negro RR ()
+[2026-02-01 01:01:11]       ⚽ Cibao 2-0 Universidad O&M ()
+[2026-02-01 01:01:11]       ⚽ SE do Gama 0-1 Paranoa ()
+[2026-02-01 01:01:11]       ⚽ Vocem Vila Operária Clube Esporte Mariano 0-0 Taquaritinga SP ()
+[2026-02-01 01:01:11]       ⚽ Clube Atletico Penapolense 0-0 Jacarei ()
+[2026-02-01 01:01:11]       ⚽ GD Saocarlense 3-1 AE Aracatuba ()
+[2026-02-01 01:01:11]       ⚽ Club Sportivo Sergipe 1-0 Confianca ()
+[2026-02-01 01:01:11]       ⚽ Isidro II 3-1 Zacatecoluca II ()
+[2026-02-01 01:01:11]       ⚽ C.D. Luis Ángel Firpo II 1-2 Inter FA II ()
+[2026-02-01 01:01:11]       ⚽ C.D. Municipal Limeno (Women) 13-0 Deportivo Hercules (Women) ()
+[2026-02-01 01:01:11]       ⚽ Queretaro U19 (Women) 0-0 Toluca U19 (Women) ()
+[2026-02-01 01:01:11]       ⚽ Club Necaxa U19 (Women) 0-0 Puebla U19 (Women) ()
+[2026-02-01 01:01:11]       ⚽ Municipal (Women) 0-3 Cuilco (Women) ()
+[2026-02-01 01:01:11] 🛑 STOPPING: Live Matches Scraper is stopping...
+[2026-02-01 01:01:16] 🛑 Stop signal received. Exiting live monitor loop.
+[2026-02-01 01:01:16] 🛑 Live scraper thread ended
+[2026-02-01 01:01:16] ✅ Live scraper stopped completely

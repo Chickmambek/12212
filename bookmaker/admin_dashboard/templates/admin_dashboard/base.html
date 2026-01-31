@@ -58,6 +58,9 @@
             <a href="{% url 'admin_transactions' %}" class="sidebar-link flex items-center px-6 py-3 text-slate-400 {% if page == 'transactions' %}active{% endif %}">
                 <i class="fas fa-exchange-alt w-6"></i> Transactions
             </a>
+            <a href="{% url 'admin_wallets' %}" class="sidebar-link flex items-center px-6 py-3 text-slate-400 {% if page == 'wallets' %}active{% endif %}">
+                <i class="fas fa-wallet w-6"></i> Wallets
+            </a>
 
             <div class="px-4 mt-6 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">System</div>
             <a href="{% url 'admin_scraper' %}" class="sidebar-link flex items-center px-6 py-3 text-slate-400 {% if page == 'scraper' %}active{% endif %}">

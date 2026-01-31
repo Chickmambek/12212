@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth import get_user_model
-from accounts.models import Profile
+from accounts.models import Profile, Wallet
 
 User = get_user_model()
 
@@ -36,3 +36,8 @@ class UserEditForm(forms.ModelForm):
             profile.country = self.cleaned_data['country']
             profile.save()
         return user
+
+class WalletForm(forms.ModelForm):
+    class Meta:
+        model = Wallet
+        fields = ['currency', 'address', 'label']

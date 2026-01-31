@@ -1142,6 +1142,16 @@
                     class="tab-btn">
                 <i class="fas fa-balance-scale mr-2"></i>Handicaps
             </button>
+            <button @click="activeTab = 'halftime'"
+                    :class="activeTab === 'halftime' ? 'active' : ''"
+                    class="tab-btn">
+                <i class="fas fa-clock mr-2"></i>Half Time
+            </button>
+            <button @click="activeTab = 'other'"
+                    :class="activeTab === 'other' ? 'active' : ''"
+                    class="tab-btn">
+                <i class="fas fa-ellipsis-h mr-2"></i>Other
+            </button>
         </nav>
 
         <!-- Main Market -->
@@ -1156,19 +1166,19 @@
                             @click="toggleBet('home', matchData.odds.home, '{{ match.home_team.name }}', 'Winner')"
                             :class="isSelected('home') && 'active'">
                         <span class="market-label">1</span>
-                        <span class="odds-value" x-text="formatOdds(matchData.odds.home)">1.85</span>
+                        <span class="odds-value" x-text="formatOdds(matchData.odds.home)"></span>
                     </button>
                     <button class="market-btn"
                             @click="toggleBet('draw', matchData.odds.draw, 'Draw', 'Winner')"
                             :class="isSelected('draw') && 'active'">
                         <span class="market-label">X</span>
-                        <span class="odds-value" x-text="formatOdds(matchData.odds.draw)">3.40</span>
+                        <span class="odds-value" x-text="formatOdds(matchData.odds.draw)"></span>
                     </button>
                     <button class="market-btn"
                             @click="toggleBet('away', matchData.odds.away, '{{ match.away_team.name }}', 'Winner')"
                             :class="isSelected('away') && 'active'">
                         <span class="market-label">2</span>
-                        <span class="odds-value" x-text="formatOdds(matchData.odds.away)">2.10</span>
+                        <span class="odds-value" x-text="formatOdds(matchData.odds.away)"></span>
                     </button>
                 </div>
             </div>
@@ -1183,17 +1193,17 @@
                     <button class="market-btn"
                             @click="toggleBet('1x', matchData.odds.double_chance_1x, '{{ match.home_team.name }} or Draw', 'Double Chance')">
                         <span class="market-label">1X</span>
-                        <span class="odds-value" x-text="formatOdds(matchData.odds.double_chance_1x)">1.25</span>
+                        <span class="odds-value" x-text="formatOdds(matchData.odds.double_chance_1x)"></span>
                     </button>
                     <button class="market-btn"
                             @click="toggleBet('12', matchData.odds.double_chance_12, '{{ match.home_team.name }} or {{ match.away_team.name }}', 'Double Chance')">
                         <span class="market-label">12</span>
-                        <span class="odds-value" x-text="formatOdds(matchData.odds.double_chance_12)">1.30</span>
+                        <span class="odds-value" x-text="formatOdds(matchData.odds.double_chance_12)"></span>
                     </button>
                     <button class="market-btn"
                             @click="toggleBet('x2', matchData.odds.double_chance_x2, 'Draw or {{ match.away_team.name }}', 'Double Chance')">
                         <span class="market-label">X2</span>
-                        <span class="odds-value" x-text="formatOdds(matchData.odds.double_chance_x2)">1.40</span>
+                        <span class="odds-value" x-text="formatOdds(matchData.odds.double_chance_x2)"></span>
                     </button>
                 </div>
             </div>
@@ -1204,18 +1214,18 @@
             <div class="glass-card market-card">
                 <h3 class="market-title">
                     <i class="fas fa-futbol"></i>
-                    Total Goals
+                    Total Goals (Over/Under 2.5)
                 </h3>
                 <div class="market-grid market-grid-2">
                     <button class="market-btn"
                             @click="toggleBet('over_25', matchData.odds.over_25, 'Over 2.5 Goals', 'Total Goals')">
                         <span class="market-label">Over 2.5</span>
-                        <span class="odds-value" x-text="formatOdds(matchData.odds.over_25)">1.95</span>
+                        <span class="odds-value" x-text="formatOdds(matchData.odds.over_25)"></span>
                     </button>
                     <button class="market-btn"
                             @click="toggleBet('under_25', matchData.odds.under_25, 'Under 2.5 Goals', 'Total Goals')">
                         <span class="market-label">Under 2.5</span>
-                        <span class="odds-value" x-text="formatOdds(matchData.odds.under_25)">1.85</span>
+                        <span class="odds-value" x-text="formatOdds(matchData.odds.under_25)"></span>
                     </button>
                 </div>
             </div>
@@ -1230,12 +1240,12 @@
                     <button class="market-btn"
                             @click="toggleBet('btts_yes', matchData.odds.btts_yes, 'Yes', 'Both Teams to Score')">
                         <span class="market-label">Yes</span>
-                        <span class="odds-value" x-text="formatOdds(matchData.odds.btts_yes)">1.80</span>
+                        <span class="odds-value" x-text="formatOdds(matchData.odds.btts_yes)"></span>
                     </button>
                     <button class="market-btn"
                             @click="toggleBet('btts_no', matchData.odds.btts_no, 'No', 'Both Teams to Score')">
                         <span class="market-label">No</span>
-                        <span class="odds-value" x-text="formatOdds(matchData.odds.btts_no)">2.00</span>
+                        <span class="odds-value" x-text="formatOdds(matchData.odds.btts_no)"></span>
                     </button>
                 </div>
             </div>
@@ -1246,18 +1256,67 @@
             <div class="glass-card market-card">
                 <h3 class="market-title">
                     <i class="fas fa-balance-scale"></i>
-                    Handicap (+0.5)
+                    Handicap ({{ match.handicap_value }})
                 </h3>
                 <div class="market-grid market-grid-2">
                     <button class="market-btn"
-                            @click="toggleBet('handicap_home', matchData.odds.handicap_home, '{{ match.home_team.name }} +0.5', 'Handicap')">
+                            @click="toggleBet('handicap_home', matchData.odds.handicap_home, '{{ match.home_team.name }} -{{ match.handicap_value }}', 'Handicap')">
                         <span class="market-label">{{ match.home_team.name|slice:"0:10" }}...</span>
-                        <span class="odds-value" x-text="formatOdds(matchData.odds.handicap_home)">1.45</span>
+                        <span class="odds-value" x-text="formatOdds(matchData.odds.handicap_home)"></span>
                     </button>
                     <button class="market-btn"
-                            @click="toggleBet('handicap_away', matchData.odds.handicap_away, '{{ match.away_team.name }} +0.5', 'Handicap')">
+                            @click="toggleBet('handicap_away', matchData.odds.handicap_away, '{{ match.away_team.name }} +{{ match.handicap_value }}', 'Handicap')">
                         <span class="market-label">{{ match.away_team.name|slice:"0:10" }}...</span>
-                        <span class="odds-value" x-text="formatOdds(matchData.odds.handicap_away)">2.75</span>
+                        <span class="odds-value" x-text="formatOdds(matchData.odds.handicap_away)"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Half Time Market -->
+        <div x-show="activeTab === 'halftime'" class="fade-in">
+            <div class="glass-card market-card">
+                <h3 class="market-title">
+                    <i class="fas fa-clock"></i>
+                    Half Time Result
+                </h3>
+                <div class="market-grid market-grid-3">
+                    <button class="market-btn"
+                            @click="toggleBet('ht_home', matchData.odds.ht_home, '{{ match.home_team.name }}', 'Half Time Winner')">
+                        <span class="market-label">1</span>
+                        <span class="odds-value" x-text="formatOdds(matchData.odds.ht_home)"></span>
+                    </button>
+                    <button class="market-btn"
+                            @click="toggleBet('ht_draw', matchData.odds.ht_draw, 'Draw', 'Half Time Winner')">
+                        <span class="market-label">X</span>
+                        <span class="odds-value" x-text="formatOdds(matchData.odds.ht_draw)"></span>
+                    </button>
+                    <button class="market-btn"
+                            @click="toggleBet('ht_away', matchData.odds.ht_away, '{{ match.away_team.name }}', 'Half Time Winner')">
+                        <span class="market-label">2</span>
+                        <span class="odds-value" x-text="formatOdds(matchData.odds.ht_away)"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Other Markets -->
+        <div x-show="activeTab === 'other'" class="fade-in">
+            <div class="glass-card market-card">
+                <h3 class="market-title">
+                    <i class="fas fa-star"></i>
+                    Draw No Bet
+                </h3>
+                <div class="market-grid market-grid-2">
+                    <button class="market-btn"
+                            @click="toggleBet('dnb_home', matchData.odds.dnb_home, '{{ match.home_team.name }}', 'Draw No Bet')">
+                        <span class="market-label">{{ match.home_team.name|slice:"0:10" }}...</span>
+                        <span class="odds-value" x-text="formatOdds(matchData.odds.dnb_home)"></span>
+                    </button>
+                    <button class="market-btn"
+                            @click="toggleBet('dnb_away', matchData.odds.dnb_away, '{{ match.away_team.name }}', 'Draw No Bet')">
+                        <span class="market-label">{{ match.away_team.name|slice:"0:10" }}...</span>
+                        <span class="odds-value" x-text="formatOdds(matchData.odds.dnb_away)"></span>
                     </button>
                 </div>
             </div>
@@ -1449,18 +1508,23 @@ function matchDetail() {
             match_time: '{{ match.match_date|date:"H:i" }}',
             status: '{{ match.status }}',
             odds: {
-                home: {{ match.odds.first.home_odds|default:1.85 }},
-                draw: {{ match.odds.first.draw_odds|default:3.40 }},
-                away: {{ match.odds.first.away_odds|default:2.10 }},
-                double_chance_1x: {{ match.odds_1x|default:1.25 }},
-                double_chance_12: {{ match.odds_12|default:1.30 }},
-                double_chance_x2: {{ match.odds_x2|default:1.40 }},
-                over_25: {{ match.odds_over_2_5|default:1.95 }},
-                under_25: {{ match.odds_under_2_5|default:1.85 }},
-                handicap_home: {{ match.odds_handicap_home|default:1.45 }},
-                handicap_away: {{ match.odds_handicap_away|default:2.75 }},
-                btts_yes: {{ match.odds_btts_yes|default:1.80 }},
-                btts_no: {{ match.odds_btts_no|default:2.00 }},
+                home: {{ match.home_odds|default:"1.0" }},
+                draw: {{ match.draw_odds|default:"1.0" }},
+                away: {{ match.away_odds|default:"1.0" }},
+                double_chance_1x: {{ match.odds_1x|default:"1.0" }},
+                double_chance_12: {{ match.odds_12|default:"1.0" }},
+                double_chance_x2: {{ match.odds_x2|default:"1.0" }},
+                over_25: {{ match.odds_over_2_5|default:"1.0" }},
+                under_25: {{ match.odds_under_2_5|default:"1.0" }},
+                handicap_home: {{ match.odds_handicap_home|default:"1.0" }},
+                handicap_away: {{ match.odds_handicap_away|default:"1.0" }},
+                btts_yes: {{ match.odds_btts_yes|default:"1.0" }},
+                btts_no: {{ match.odds_btts_no|default:"1.0" }},
+                ht_home: {{ match.odds_ht_home|default:"1.0" }},
+                ht_draw: {{ match.odds_ht_draw|default:"1.0" }},
+                ht_away: {{ match.odds_ht_away|default:"1.0" }},
+                dnb_home: {{ match.odds_dnb_home|default:"1.0" }},
+                dnb_away: {{ match.odds_dnb_away|default:"1.0" }},
             }
         },
 

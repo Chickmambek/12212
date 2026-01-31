@@ -18,7 +18,7 @@ class Command(BaseCommand):
             delay = random.uniform(1.0, 2.0)
             await asyncio.sleep(delay)
 
-            self.stdout.write(self.style.HTTP_INFO(f"\n--- Processing: {match.home_team.name} vs {match.away_team.name} ---"))
+            self.stdout.write(self.style.HTTP_INFO(f"🔴 Scraping Now: {match.home_team.name} vs {match.away_team.name}"))
             
             if not match.match_url:
                 self.stdout.write(self.style.WARNING(f"  Skipping {match.home_team.name} vs {match.away_team.name}: No match URL."))

@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% block content %}
 <div style="padding: 20px;">
-    <h1>Scraper Monitor</h1>
+    <h1>Combined Scraper Monitor</h1>
 
     <div style="margin-bottom: 20px;">
         Status:
@@ -15,20 +15,31 @@
         <button onclick="toggleScraper('stop')" class="button" style="background: red;">Stop Monitor</button>
     </div>
 
-    <div style="background: #000; color: #0f0; padding: 15px; height: 500px; overflow-y: scroll; font-family: monospace; white-space: pre-wrap;" id="log-container">
+    <h2>General Logs</h2>
+    <div style="background: #000; color: #0f0; padding: 15px; height: 300px; overflow-y: scroll; font-family: monospace; white-space: pre-wrap; margin-bottom: 20px;" id="log-container">
 {{ status.logs }}
+    </div>
+
+    <h2>Live Matches</h2>
+    <div style="background: #000; color: #0f0; padding: 15px; height: 300px; overflow-y: scroll; font-family: monospace; white-space: pre-wrap; margin-bottom: 20px;" id="live-matches-log-container">
+{{ status.live_matches_log }}
+    </div>
+
+    <h2>Upcoming Matches</h2>
+    <div style="background: #000; color: #0f0; padding: 15px; height: 300px; overflow-y: scroll; font-family: monospace; white-space: pre-wrap;" id="upcoming-matches-log-container">
+{{ status.upcoming_matches_log }}
     </div>
 
     <script>
         function toggleScraper(action) {
-            fetch(`/admin/scraper_module/scraperstatus/control/${action}/`, {
+            fetch(`/admin/scraper_module/combinedscraperstatus/control/${action}/`, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': '{{ csrf_token }}'
                 }
             }).then(response => response.json()).then(data => {
                 if(data.status === 'ok') {
-                    updateLogs(); // Immediately update logs after action
+                    updateLogs();
                 } else {
                     alert(data.message);
                 }
@@ -36,14 +47,21 @@
         }
 
         const logContainer = document.getElementById('log-container');
+        const liveMatchesLogContainer = document.getElementById('live-matches-log-container');
+        const upcomingMatchesLogContainer = document.getElementById('upcoming-matches-log-container');
         const statusIndicator = document.getElementById('status-indicator');
 
         function updateLogs() {
-            fetch(`/admin/scraper_module/scraperstatus/logs/`)
+            fetch(`/admin/scraper_module/combinedscraperstatus/logs/`)
                 .then(response => response.json())
                 .then(data => {
                     logContainer.textContent = data.logs;
+                    liveMatchesLogContainer.textContent = data.live_matches_log;
+                    upcomingMatchesLogContainer.textContent = data.upcoming_matches_log;
+
                     logContainer.scrollTop = logContainer.scrollHeight;
+                    liveMatchesLogContainer.scrollTop = liveMatchesLogContainer.scrollHeight;
+                    upcomingMatchesLogContainer.scrollTop = upcomingMatchesLogContainer.scrollHeight;
 
                     if (data.is_running) {
                         statusIndicator.textContent = 'RUNNING';
@@ -55,11 +73,11 @@
                 });
         }
 
-        // Auto-refresh logs every 3 seconds
         setInterval(updateLogs, 3000);
 
-        // Scroll to bottom on initial load
         logContainer.scrollTop = logContainer.scrollHeight;
+        liveMatchesLogContainer.scrollTop = liveMatchesLogContainer.scrollHeight;
+        upcomingMatchesLogContainer.scrollTop = upcomingMatchesLogContainer.scrollHeight;
     </script>
 </div>
 {% endblock %}

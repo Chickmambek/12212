@@ -5,9 +5,9 @@ from django.db.models import Sum
 from django.core.paginator import Paginator
 from django.contrib import messages
 from matches.models import Match, Bet, ExpressBet
-from accounts.models import Profile, CryptoTransaction
+from accounts.models import Profile, CryptoTransaction, Wallet
 from scraper_module.models import ScraperStatus
-from .forms import UserEditForm
+from .forms import UserEditForm, WalletForm
 
 User = get_user_model()
 
@@ -21,9 +21,9 @@ def dashboard_home(request):
     live_matches = Match.objects.filter(status=Match.STATUS_LIVE).count()
     total_bets = Bet.objects.count()
     total_wagered = Bet.objects.aggregate(Sum('amount'))['amount__sum'] or 0
-    
+
     recent_bets = Bet.objects.select_related('user', 'match').order_by('-created_at')[:10]
-    
+
     context = {
         'total_users': total_users,
         'total_matches': total_matches,
@@ -88,6 +88,40 @@ def transactions_list(request):
     page = request.GET.get('page')
     transactions = paginator.get_page(page)
     return render(request, 'admin_dashboard/transactions.html', {'transactions': transactions, 'page': 'transactions'})
+
+@user_passes_test(is_admin)
+def wallets_list(request):
+    wallets = Wallet.objects.all()
+    return render(request, 'admin_dashboard/wallets.html', {'wallets': wallets, 'page': 'wallets'})
+
+@user_passes_test(is_admin)
+def wallet_edit(request, wallet_id=None):
+    if wallet_id:
+        wallet = get_object_or_404(Wallet, id=wallet_id)
+        title = "Edit Wallet"
+    else:
+        wallet = None
+        title = "Add Wallet"
+
+    if request.method == 'POST':
+        form = WalletForm(request.POST, instance=wallet)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Wallet saved successfully.")
+            return redirect('admin_wallets')
+    else:
+        form = WalletForm(instance=wallet)
+
+    return render(request, 'admin_dashboard/wallet_edit.html', {'form': form, 'title': title, 'page': 'wallets'})
+
+@user_passes_test(is_admin)
+def wallet_delete(request, wallet_id):
+    wallet = get_object_or_404(Wallet, id=wallet_id)
+    if request.method == 'POST':
+        wallet.delete()
+        messages.success(request, "Wallet deleted successfully.")
+        return redirect('admin_wallets')
+    return render(request, 'admin_dashboard/confirm_delete.html', {'object': wallet, 'page': 'wallets'})
 
 @user_passes_test(is_admin)
 def scraper_control(request):
