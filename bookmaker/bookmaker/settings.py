@@ -223,4 +223,5 @@ USE_X_FORWARDED_PORT = True
 # IP Whitelist
 # Add your IP here. Use '*' to allow all (disable whitelist).
 # Example: ['127.0.0.1', '192.168.1.100']
-ALLOWED_IPS = os.getenv('ALLOWED_IPS', '127.0.0.1,192.168.1.100,136.234.161.19')
+ALLOWED_IPS_STRING = os.getenv('ALLOWED_IPS', '127.0.0.1,192.168.1.100,136.234.161.19')
+ALLOWED_IPS = [ip.strip() for ip in ALLOWED_IPS_STRING.split(',') if ip.strip()]
