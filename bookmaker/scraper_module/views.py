@@ -1,11 +1,12 @@
+# views.py - Updated with live scraper workflow
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
-from .tasks import start_scraping_task, stop_scraping_task
+from .tasks import *
 import os
 import json
 from django.views.decorators.http import require_http_methods
-from .models import ScraperStatus  # Import the model
+from .models import ScraperStatus, LiveScraperStatus  # Import LiveScraperStatus model
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -14,10 +15,12 @@ from django.db.models import Count, Max, Min
 import os
 from django.conf import settings
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
+import timedelta
 
 
-# views.py - update start_scraper view
+# ============== MAIN SCRAPER VIEWS (EXISTING) ==============
+
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
 def start_scraper(request):
@@ -37,7 +40,7 @@ def start_scraper(request):
             }, status=400)
 
         # IMPORTANT: Also check the global flag from tasks.py
-        from .tasks import scraper_running
+
         if scraper_running:
             return JsonResponse({
                 'status': 'error',
@@ -161,57 +164,415 @@ def get_scraperlogs(request):
         }, status=500)
 
 
+# ============== LIVE SCRAPER VIEWS ==============
+# ============== LIVE SCRAPER VIEWS ==============
+
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def start_live_scraper(request):
+    """Start the live matches scraper"""
+    print(f"start_live_scraper endpoint called with method: {request.method}")
+
+    # For GET requests, return status info
+    if request.method == 'GET':
+        try:
+            # Get the live scraper status instance
+            live_status = LiveScraperStatus.get_instance()
+
+            # Get global flag for backup
+
+            global_is_running = live_scraper_running if 'live_scraper_running' in dir() else False
+
+            # Use database status, fallback to global flag
+            is_running_status = live_status.is_running or global_is_running
+
+            return JsonResponse({
+                'status': 'info',
+                'endpoint': '/admin21/scraper_module/api/live-scraper/start/',
+                'method': request.method,
+                'allowed_methods': ['GET', 'POST'],
+                'description': 'Start the live matches scraper',
+                'current_status': {
+                    'is_running': is_running_status,
+                    'last_run': live_status.last_run.strftime('%Y-%m-%d %H:%M:%S') if live_status.last_run else None,
+                    'action': 'start',
+                    'note': 'Use POST method to actually start the scraper'
+                }
+            })
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Error getting status: {str(e)}'
+            }, status=500)
+
+    # For POST requests, handle the actual start logic
+    elif request.method == 'POST':
+        try:
+            # Get the live scraper status instance
+            live_status = LiveScraperStatus.get_instance()
+
+            print("Live scraper status POST : " + str(live_status))
+
+            # Check if already running
+            if live_status.is_running:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Live scraper is already running!',
+                    'is_running': True
+                }, status=400)
+
+            # Check global flag
+
+            if live_scraper_running:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Live scraper is already running (task flag)!',
+                    'is_running': True
+                }, status=400)
+
+            # Start the live scraper
+            result = start_live_scraping_task()
+            print(f"Live task started: {result}")
+
+            # Update status
+            live_status.refresh_from_db()
+
+            return JsonResponse({
+                'status': 'ok',
+                'message': 'Live scraper started successfully',
+                'is_running': live_status.is_running,
+                'last_run': live_status.last_run.strftime('%Y-%m-%d %H:%M:%S') if live_status.last_run else None
+            })
+
+        except Exception as e:
+            print(f"Error starting live scraper: {str(e)}")
+            import traceback
+            traceback.print_exc()
+
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Failed to start live scraper: {str(e)}',
+                'is_running': False
+            }, status=500)
+
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Method not allowed: {request.method}'
+        }, status=405)
+
+
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def stop_live_scraper(request):
+    """Stop the live matches scraper"""
+    print(f"stop_live_scraper endpoint called with method: {request.method}")
+
+    # For GET requests, return status info
+    if request.method == 'GET':
+        try:
+            # Get the live scraper status instance
+            live_status = LiveScraperStatus.get_instance()
+
+            # Get global flag for backup
+
+            global_is_running = live_scraper_running if 'live_scraper_running' in dir() else False
+
+            # Use database status, fallback to global flag
+            is_running_status = live_status.is_running or global_is_running
+
+            return JsonResponse({
+                'status': 'info',
+                'endpoint': '/admin21/scraper_module/api/live-scraper/stop/',
+                'method': request.method,
+                'allowed_methods': ['GET', 'POST'],
+                'description': 'Stop the live matches scraper',
+                'current_status': {
+                    'is_running': is_running_status,
+                    'last_run': live_status.last_run.strftime('%Y-%m-%d %H:%M:%S') if live_status.last_run else None,
+                    'action': 'stop',
+                    'note': 'Use POST method to actually stop the scraper'
+                }
+            })
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Error getting status: {str(e)}'
+            }, status=500)
+
+    # For POST requests, handle the actual stop logic
+    elif request.method == 'POST':
+        try:
+            # Get the live scraper status instance
+            live_status = LiveScraperStatus.get_instance()
+
+            # Check if already stopped
+            if not live_status.is_running:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Live scraper is already stopped!',
+                    'is_running': False
+                }, status=400)
+
+            # Stop the live scraper
+            result = stop_live_scraping_task()
+            print(f"Live task stopped: {result}")
+
+            # Update status
+            live_status.refresh_from_db()
+
+            return JsonResponse({
+                'status': 'ok',
+                'message': 'Live scraper stopped successfully',
+                'is_running': live_status.is_running,
+                'last_run': live_status.last_run.strftime('%Y-%m-%d %H:%M:%S') if live_status.last_run else None
+            })
+
+        except Exception as e:
+            print(f"Error stopping live scraper: {str(e)}")
+            import traceback
+            traceback.print_exc()
+
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Failed to stop live scraper: {str(e)}',
+                'is_running': live_status.is_running
+            }, status=500)
+
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Method not allowed: {request.method}'
+        }, status=405)
+
+@require_http_methods(["GET"])
+def get_live_scraper_logs(request):
+    """Get live scraper logs and status"""
+    print("get_live_scraper_logs endpoint called")
+
+    try:
+        # Get the live scraper status instance
+        live_status = LiveScraperStatus.get_instance()
+
+        # Update logs from file with proper encoding
+        try:
+            if os.path.exists('live_scraper.log'):
+                # Try UTF-8 first, then fallback to latin-1
+                try:
+                    with open('live_scraper.log', 'r', encoding='utf-8') as f:
+                        lines = f.readlines()
+                except UnicodeDecodeError:
+                    with open('live_scraper.log', 'r', encoding='latin-1') as f:
+                        lines = f.readlines()
+
+                # Get last 200 lines
+                live_status.logs = ''.join(lines[-200:]) if len(lines) > 200 else ''.join(lines)
+            else:
+                live_status.logs = "Live scraper log file not found. Scraper may not have run yet."
+            live_status.save()
+        except Exception as e:
+            live_status.logs = f"Error reading live logs: {str(e)}"
+            live_status.save()
+
+        # Check if log file exists
+        log_file_exists = os.path.exists('live_scraper.log')
+
+        # Get global flag for backup
+
+        global_is_running = live_scraper_running if 'live_scraper_running' in dir() else False
+
+        # Use database status, fallback to global flag
+        is_running_status = live_status.is_running or global_is_running
+
+        return JsonResponse({
+            'status': 'ok',
+            'logs': live_status.logs,
+            'is_running': is_running_status,
+            'last_run': live_status.last_run.strftime('%Y-%m-%d %H:%M:%S') if live_status.last_run else None,
+            'log_file_exists': log_file_exists
+        })
+
+    except Exception as e:
+        print(f"Error getting live scraper logs: {str(e)}")
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e),
+            'logs': f'Error reading live logs: {str(e)}',
+            'is_running': False,
+            'last_run': None,
+            'log_file_exists': False
+        }, status=500)
+
+
+@require_http_methods(["GET"])
+def get_live_scraper_status(request):
+    """Get live scraper status without logs"""
+    print("get_live_scraper_status endpoint called")
+
+    try:
+        # Get the live scraper status instance
+        live_status = LiveScraperStatus.get_instance()
+
+        # Get global flag for backup
+
+        global_is_running = live_scraper_running if 'live_scraper_running' in dir() else False
+
+        # Use database status, fallback to global flag
+        is_running_status = live_status.is_running or global_is_running
+
+        # Check if log file exists
+        log_file_exists = os.path.exists('live_scraper.log')
+
+        # Get log file size if exists
+        log_file_size = 0
+        if log_file_exists:
+            log_file_size = os.path.getsize('live_scraper.log')
+
+        return JsonResponse({
+            'status': 'ok',
+            'is_running': is_running_status,
+            'last_run': live_status.last_run.strftime('%Y-%m-%d %H:%M:%S') if live_status.last_run else None,
+            'log_file_exists': log_file_exists,
+            'log_file_size_kb': round(log_file_size / 1024, 2) if log_file_exists else 0
+        })
+
+    except Exception as e:
+        print(f"Error getting live scraper status: {str(e)}")
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e),
+            'is_running': False,
+            'last_run': None
+        }, status=500)
+
+
+# ============== COMBINED SCRAPER VIEWS ==============
+
 @require_http_methods(["GET"])
 def get_scraper_stats(request):
-    """Get scraper statistics"""
+    """Get comprehensive statistics for both scrapers"""
     try:
-        # Get total matches
+        # Get scraper statuses
+        main_status = ScraperStatus.get_instance()
+        live_status = LiveScraperStatus.get_instance()
+
+        # Calculate time ranges
+        now = datetime.now()
+        today_start = datetime.combine(now.date(), datetime.min.time())
+        hour_ago = now - timedelta(hours=1)
+        day_ago = now - timedelta(days=1)
+
+        # Database statistics
         total_matches = Match.objects.count()
+        live_matches = Match.objects.filter(status='live').count()
+        upcoming_matches = Match.objects.filter(status='upcoming').count()
+        finished_matches = Match.objects.filter(status='finished').count()
 
         # Get last updated match
         last_match = Match.objects.order_by('-scraped_at').first()
         last_updated = last_match.scraped_at if last_match else None
 
-        # Get matches added today
-        today = datetime.now().date()
+        # Count matches by time periods
         today_matches = Match.objects.filter(
-            scraped_at__date=today
+            scraped_at__gte=today_start
         ).count()
 
-        # Calculate scraping speed (matches per hour)
-        hour_ago = datetime.now() - timedelta(hours=1)
         recent_matches = Match.objects.filter(
             scraped_at__gte=hour_ago
         ).count()
-        scraping_speed = f"{recent_matches}/hour"
 
-        # Get database info (simplified)
+        daily_matches = Match.objects.filter(
+            scraped_at__gte=day_ago
+        ).count()
+
+        # Calculate scraping speed
+        scraping_speed = f"{recent_matches}/hour"
+        avg_daily_speed = f"{daily_matches // 24 if daily_matches > 24 else 1}/hour"
+
+        # Database records count
         db_records = {
             'matches': total_matches,
             'teams': Team.objects.count(),
             'odds': Odds.objects.count(),
+            'live_matches': live_matches,
+            'upcoming_matches': upcoming_matches,
+            'finished_matches': finished_matches,
         }
 
-        # Estimate database size (this is a rough estimate)
-        db_size_kb = (total_matches * 2) + (Team.objects.count() * 1)  # Rough KB estimate
+        # Log file statistics
+        log_stats = {
+            'main_scraper': {
+                'exists': os.path.exists('scraper.log'),
+                'size_kb': 0,
+                'modified': None
+            },
+            'live_scraper': {
+                'exists': os.path.exists('live_scraper.log'),
+                'size_kb': 0,
+                'modified': None
+            }
+        }
 
-        return JsonResponse({
+        # Get log file details
+        for scraper, log_file in [('main_scraper', 'scraper.log'),
+                                  ('live_scraper', 'live_scraper.log')]:
+            if os.path.exists(log_file):
+                size = os.path.getsize(log_file)
+                log_stats[scraper]['size_kb'] = round(size / 1024, 2)
+                mtime = os.path.getmtime(log_file)
+                log_stats[scraper]['modified'] = datetime.fromtimestamp(mtime).isoformat()
+
+        # System information
+        system_info = {
+            'current_time': now.isoformat(),
+            'today': today_start.isoformat(),
+            'uptime_hours': None  # You could add system uptime here
+        }
+
+        response_data = {
             'status': 'ok',
-            'total_matches': total_matches,
-            'last_updated': last_updated.isoformat() if last_updated else None,
-            'today_matches': today_matches,
-            'scraping_speed': scraping_speed,
-            'db_size': f"{db_size_kb} KB",
-            'db_records': db_records,
-            'avg_speed': f"{today_matches // 24 if today_matches > 24 else 1}/hour"
-        })
+            'system': system_info,
+            'database': {
+                'total_records': total_matches,
+                'last_updated': last_updated.isoformat() if last_updated else None,
+                'today_new': today_matches,
+                'recent_hour': recent_matches,
+                'last_24h': daily_matches,
+                'scraping_speed': scraping_speed,
+                'avg_daily_speed': avg_daily_speed,
+                'records': db_records,
+                'match_status': {
+                    'live': live_matches,
+                    'upcoming': upcoming_matches,
+                    'finished': finished_matches
+                }
+            },
+            'scrapers': {
+                'main': {
+                    'is_running': main_status.is_running,
+                    'last_run': main_status.last_run.isoformat() if main_status.last_run else None,
+                    'status': main_status.status,
+                    'log': log_stats['main_scraper']
+                },
+                'live': {
+                    'is_running': live_status.is_running,
+                    'last_run': live_status.last_run.isoformat() if live_status.last_run else None,
+                    'status': live_status.status,
+                    'log': log_stats['live_scraper']
+                }
+            }
+        }
+
+        return JsonResponse(response_data, json_dumps_params={'indent': 2})
 
     except Exception as e:
-        return JsonResponse({
+        import traceback
+        error_details = {
             'status': 'error',
-            'message': str(e)
-        }, status=500)
-
+            'message': str(e),
+            'traceback': traceback.format_exc()
+        }
+        return JsonResponse(error_details, status=500, json_dumps_params={'indent': 2})
 
 @require_http_methods(["GET"])
 def get_recent_matches(request):
@@ -247,109 +608,57 @@ def get_recent_matches(request):
         }, status=500)
 
 
-@csrf_exempt
-@require_http_methods(["POST"])
-def control_live_scraper(request, action):
-    """Control the live matches scraper"""
-    try:
-        from .tasks import start_live_scraping_task, stop_live_scraping_task
-
-        if action == 'start':
-            result = start_live_scraping_task()
-            return JsonResponse({
-                'status': 'ok',
-                'message': 'Live scraper started successfully',
-                'is_running': True
-            })
-        elif action == 'stop':
-            result = stop_live_scraping_task()
-            return JsonResponse({
-                'status': 'ok',
-                'message': 'Live scraper stopped successfully',
-                'is_running': False
-            })
-        else:
-            return JsonResponse({
-                'status': 'error',
-                'message': f'Invalid action: {action}'
-            }, status=400)
-
-    except Exception as e:
-        return JsonResponse({
-            'status': 'error',
-            'message': str(e)
-        }, status=500)
-
-
-@require_http_methods(["GET"])
-def get_live_scraper_logs(request):
-    """Get live scraper logs"""
-    try:
-        log_file = 'live_scraper.log'
-        logs = ""
-
-        if os.path.exists(log_file):
-            try:
-                with open(log_file, 'r', encoding='utf-8') as f:
-                    lines = f.readlines()
-                    logs = ''.join(lines[-200:]) if len(lines) > 200 else ''.join(lines)
-            except UnicodeDecodeError:
-                with open(log_file, 'r', encoding='latin-1') as f:
-                    lines = f.readlines()
-                    logs = ''.join(lines[-200:]) if len(lines) > 200 else ''.join(lines)
-        else:
-            logs = "Live scraper log file not found. Scraper may not have run yet."
-
-        # Get live scraper status
-        from .tasks import live_scraper_running
-
-        return JsonResponse({
-            'status': 'ok',
-            'logs': logs,
-            'is_running': live_scraper_running if 'live_scraper_running' in locals() else False
-        })
-
-    except Exception as e:
-        return JsonResponse({
-            'status': 'error',
-            'message': str(e)
-        }, status=500)
-
+# ============== LOG MANAGEMENT VIEWS ==============
 
 @csrf_exempt
 def clear_logs(request, log_type):
     """Clear log files based on type: main, live, or all"""
-    print("clearing_logs")
+    print(f"clear_logs endpoint called with type: {log_type}")
+
     try:
         if log_type == 'main':
-            log_file = 'scraper.log'
-            if os.path.exists(log_file):
-                # Instead of deleting, we can truncate or create empty file
-                with open(log_file, 'w', encoding='utf-8') as f:
+            # Clear main scraper log file
+            if os.path.exists('scraper.log'):
+                with open('scraper.log', 'w', encoding='utf-8') as f:
                     f.write(f"[{timezone.now().strftime('%Y-%m-%d %H:%M:%S')}] Logs cleared by user\n")
                 message = 'Main logs cleared successfully'
             else:
                 message = 'Main log file not found'
 
+            # Also clear database logs
+            scraper_status = ScraperStatus.get_instance()
+            scraper_status.logs = f"[{timezone.now().strftime('%Y-%m-%d %H:%M:%S')}] Logs cleared by user\n"
+            scraper_status.save()
+
         elif log_type == 'live':
-            log_file = 'live_scraper.log'
-            if os.path.exists(log_file):
-                with open(log_file, 'w', encoding='utf-8') as f:
+            # Clear live scraper log file
+            if os.path.exists('live_scraper.log'):
+                with open('live_scraper.log', 'w', encoding='utf-8') as f:
                     f.write(f"[{timezone.now().strftime('%Y-%m-%d %H:%M:%S')}] Logs cleared by user\n")
                 message = 'Live logs cleared successfully'
             else:
                 message = 'Live log file not found'
 
-        elif log_type == 'all':
-            # Clear main logs
-            if os.path.exists('scraper.log'):
-                with open('scraper.log', 'w', encoding='utf-8') as f:
-                    f.write(f"[{timezone.now().strftime('%Y-%m-%d %H:%M:%S')}] Logs cleared by user\n")
+            # Also clear database logs
+            live_status = LiveScraperStatus.get_instance()
+            live_status.logs = f"[{timezone.now().strftime('%Y-%m-%d %H:%M:%S')}] Logs cleared by user\n"
+            live_status.save()
 
-            # Clear live logs
-            if os.path.exists('live_scraper.log'):
-                with open('live_scraper.log', 'w', encoding='utf-8') as f:
-                    f.write(f"[{timezone.now().strftime('%Y-%m-%d %H:%M:%S')}] Logs cleared by user\n")
+        elif log_type == 'all':
+            # Clear all log files
+            for log_file in ['scraper.log', 'live_scraper.log']:
+                if os.path.exists(log_file):
+                    with open(log_file, 'w', encoding='utf-8') as f:
+                        f.write(f"[{timezone.now().strftime('%Y-%m-%d %H:%M:%S')}] Logs cleared by user\n")
+
+            # Clear database logs for both
+            scraper_status = ScraperStatus.get_instance()
+            scraper_status.logs = f"[{timezone.now().strftime('%Y-%m-%d %H:%M:%S')}] Logs cleared by user\n"
+            scraper_status.save()
+
+            live_status = LiveScraperStatus.get_instance()
+            live_status.logs = f"[{timezone.now().strftime('%Y-%m-%d %H:%M:%S')}] Logs cleared by user\n"
+            live_status.save()
 
             message = 'All logs cleared successfully'
 
@@ -371,40 +680,50 @@ def clear_logs(request, log_type):
         }, status=500)
 
 
-# Alternative: Create a separate log management view
 @csrf_exempt
 def manage_logs(request):
     """Manage log files with different actions"""
-    import time
-
     if request.method == 'POST':
-        action = request.POST.get('action', '')
-        log_type = request.POST.get('type', 'all')
-
         try:
+            data = json.loads(request.body)
+            action = data.get('action', '')
+            log_type = data.get('type', 'all')
+
             if action == 'clear':
-                if log_type == 'main' or log_type == 'all':
-                    if os.path.exists('scraper.log'):
-                        with open('scraper.log', 'w', encoding='utf-8') as f:
-                            f.write(f"[{timezone.now().strftime('%Y-%m-%d %H:%M:%S')}] Logs cleared\n")
-
-                if log_type == 'live' or log_type == 'all':
-                    if os.path.exists('live_scraper.log'):
-                        with open('live_scraper.log', 'w', encoding='utf-8') as f:
-                            f.write(f"[{timezone.now().strftime('%Y-%m-%d %H:%M:%S')}] Logs cleared\n")
-
-                return JsonResponse({
-                    'status': 'ok',
-                    'message': f'{log_type.capitalize()} logs cleared successfully'
-                })
+                # Call the clear_logs function with the appropriate type
+                if log_type == 'all':
+                    return clear_logs(request, 'all')
+                elif log_type == 'main':
+                    return clear_logs(request, 'main')
+                elif log_type == 'live':
+                    return clear_logs(request, 'live')
+                else:
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': f'Invalid log type: {log_type}'
+                    }, status=400)
 
             elif action == 'download':
-                # Download log file
-                log_file = 'scraper.log' if log_type == 'main' else 'live_scraper.log'
+                # Prepare log file for download
+                if log_type == 'main':
+                    log_file = 'scraper.log'
+                    filename = f'scraper_log_{timezone.now().strftime("%Y%m%d_%H%M%S")}.txt'
+                elif log_type == 'live':
+                    log_file = 'live_scraper.log'
+                    filename = f'live_scraper_log_{timezone.now().strftime("%Y%m%d_%H%M%S")}.txt'
+                else:
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': f'Invalid log type for download: {log_type}'
+                    }, status=400)
+
                 if os.path.exists(log_file):
-                    from django.http import FileResponse
-                    response = FileResponse(open(log_file, 'rb'))
-                    response['Content-Disposition'] = f'attachment; filename="{log_file}"'
+                    with open(log_file, 'r', encoding='utf-8') as f:
+                        content = f.read()
+
+                    from django.http import HttpResponse
+                    response = HttpResponse(content, content_type='text/plain')
+                    response['Content-Disposition'] = f'attachment; filename="{filename}"'
                     return response
                 else:
                     return JsonResponse({
@@ -413,16 +732,28 @@ def manage_logs(request):
                     }, status=404)
 
             elif action == 'view':
-                # View log file content
-                log_file = 'scraper.log' if log_type == 'main' else 'live_scraper.log'
+                # View log file content (truncated)
+                if log_type == 'main':
+                    log_file = 'scraper.log'
+                elif log_type == 'live':
+                    log_file = 'live_scraper.log'
+                else:
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': f'Invalid log type for view: {log_type}'
+                    }, status=400)
+
                 content = ''
                 if os.path.exists(log_file):
                     with open(log_file, 'r', encoding='utf-8') as f:
-                        content = f.read()
+                        lines = f.readlines()
+                        content = ''.join(lines[-100:])  # Last 100 lines only
+
                 return JsonResponse({
                     'status': 'ok',
                     'content': content,
-                    'size': len(content)
+                    'size': len(content),
+                    'filename': log_file
                 })
 
             else:
@@ -441,3 +772,79 @@ def manage_logs(request):
         'status': 'error',
         'message': 'Invalid request method'
     }, status=400)
+
+
+# ============== BOTH SCRAPERS CONTROL ==============
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def control_all_scrapers(request, action):
+    """Control both scrapers at once (start/stop all)"""
+    print(f"control_all_scrapers endpoint called with action: {action}")
+
+    try:
+        if action == 'start':
+            # Start main scraper
+            main_result = start_scraping_task()
+
+            # Start live scraper
+
+            live_result = start_live_scraping_task()
+
+            # Get statuses
+            main_status = ScraperStatus.get_instance()
+            live_status = LiveScraperStatus.get_instance()
+
+            return JsonResponse({
+                'status': 'ok',
+                'message': 'All scrapers started successfully',
+                'main_scraper': {
+                    'is_running': main_status.is_running,
+                    'last_run': main_status.last_run.strftime('%Y-%m-%d %H:%M:%S') if main_status.last_run else None
+                },
+                'live_scraper': {
+                    'is_running': live_status.is_running,
+                    'last_run': live_status.last_run.strftime('%Y-%m-%d %H:%M:%S') if live_status.last_run else None
+                }
+            })
+
+        elif action == 'stop':
+            # Stop main scraper
+            main_result = stop_scraping_task()
+
+            # Stop live scraper
+
+            live_result = stop_live_scraping_task()
+
+            # Get statuses
+            main_status = ScraperStatus.get_instance()
+            live_status = LiveScraperStatus.get_instance()
+
+            return JsonResponse({
+                'status': 'ok',
+                'message': 'All scrapers stopped successfully',
+                'main_scraper': {
+                    'is_running': main_status.is_running,
+                    'last_run': main_status.last_run.strftime('%Y-%m-%d %H:%M:%S') if main_status.last_run else None
+                },
+                'live_scraper': {
+                    'is_running': live_status.is_running,
+                    'last_run': live_status.last_run.strftime('%Y-%m-%d %H:%M:%S') if live_status.last_run else None
+                }
+            })
+
+        else:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Invalid action: {action}'
+            }, status=400)
+
+    except Exception as e:
+        print(f"Error controlling all scrapers: {str(e)}")
+        import traceback
+        traceback.print_exc()
+
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Failed to control all scrapers: {str(e)}'
+        }, status=500)

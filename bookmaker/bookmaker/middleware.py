@@ -36,7 +36,8 @@ class IPWhitelistMiddleware:
 
         # Check if this path is protected
         path = request.path_info
-        protected_paths = ['/admin/', '/dashboard/']
+        # Added /admin21/ to protected paths as it contains sensitive scraper controls
+        protected_paths = ['/admin/', '/dashboard/', '/admin21/']
         is_protected = any(path.startswith(protected) for protected in protected_paths)
 
         if is_protected:

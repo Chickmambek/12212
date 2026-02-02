@@ -199,6 +199,7 @@ Q_CLUSTER = {
     'workers': 4,
     'recycle': 500,
     'timeout': 600,  # Increased to 10 minutes (600 seconds)
+    'retry': 660,    # Retry should be larger than timeout (e.g., timeout + 10%)
     'compress': True,
     'save_limit': 250,
     'queue_limit': 500,
@@ -223,5 +224,4 @@ USE_X_FORWARDED_PORT = True
 # IP Whitelist
 # Add your IP here. Use '*' to allow all (disable whitelist).
 # Example: ['127.0.0.1', '192.168.1.100']
-ALLOWED_IPS_STRING = os.getenv('ALLOWED_IPS', '127.0.0.1,192.168.1.100,136.234.161.19')
-ALLOWED_IPS = [ip.strip() for ip in ALLOWED_IPS_STRING.split(',') if ip.strip()]
+#ALLOWED_IPS_STRING = os.getenv('ALLOWED_IPS', '127.0.0.1,192.168.1.100,136.234.161.19')

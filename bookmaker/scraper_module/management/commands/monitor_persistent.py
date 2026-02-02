@@ -38,7 +38,7 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.ERROR("Failed to set up Playwright driver. Exiting."))
                     return
                 
-                await scraper.monitor_live_and_upcoming_orchestrator(
+                await scraper.monitor_live_page_persistent(
                     status_check_callback=check_status,
                     log_callback=log_callback
                 )

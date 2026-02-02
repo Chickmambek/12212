@@ -136,8 +136,10 @@
 
             <div class="flex items-center gap-4">
                 <div id="live-status-indicator" class="flex items-center gap-2 px-3 py-1 bg-slate-800 rounded-lg border border-slate-700">
-                    <div class="w-2 h-2 rounded-full bg-red-500"></div>
-                    <span id="live-status-text" class="text-xs font-bold text-red-500">STOPPED</span>
+                    <div class="w-2 h-2 rounded-full {% if live_status.is_running %}bg-emerald-500 animate-pulse{% else %}bg-red-500{% endif %}"></div>
+                    <span id="live-status-text" class="text-xs font-bold {% if live_status.is_running %}text-emerald-500{% else %}text-red-500{% endif %}">
+                        {% if live_status.is_running %}RUNNING{% else %}STOPPED{% endif %}
+                    </span>
                 </div>
 
                 <!-- Clear Live Logs Button -->
@@ -146,13 +148,14 @@
                 </button>
 
                 <button id="live-start-btn" onclick="toggleLiveScraper('start')"
-                        class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1 rounded text-sm font-bold transition">
+                        class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1 rounded text-sm font-bold transition {% if live_status.is_running %}opacity-50 cursor-not-allowed{% endif %}"
+                        {% if live_status.is_running %}disabled{% endif %}>
                     <i class="fas fa-play mr-1"></i> Start
                 </button>
 
                 <button id="live-stop-btn" onclick="toggleLiveScraper('stop')"
-                        class="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded text-sm font-bold transition opacity-50 cursor-not-allowed"
-                        disabled>
+                        class="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded text-sm font-bold transition {% if not live_status.is_running %}opacity-50 cursor-not-allowed{% endif %}"
+                        {% if not live_status.is_running %}disabled{% endif %}>
                     <i class="fas fa-stop mr-1"></i> Stop
                 </button>
             </div>
@@ -160,7 +163,7 @@
 
         <div class="flex-1 p-4 overflow-y-auto font-mono text-sm text-cyan-400 whitespace-pre-wrap leading-relaxed"
              id="live-log-container">
-            No live scraper logs available
+            {{ live_status.logs|default:"No live scraper logs available" }}
         </div>
 
         <div class="px-4 py-2 border-t border-slate-800 bg-slate-900/50 text-xs text-slate-400 flex justify-between">
@@ -207,9 +210,9 @@
 <script>
     // Global state
     let mainScraperRunning = {{ status.is_running|yesno:"true,false" }};
-    let liveScraperRunning = false;
+    let liveScraperRunning = {{ live_status.is_running|yesno:"true,false" }};
     let mainLogs = `{{ status.logs|escapejs }}`;
-    let liveLogs = '';
+    let liveLogs = `{{ live_status.logs|escapejs }}`;
     let mainLogUpdateInterval = null;
     let liveLogUpdateInterval = null;
     let statsUpdateInterval = null;
@@ -495,7 +498,12 @@
         }
 
         try {
-            const response = await fetch(`/admin21/scraper_module/api/live-scraper/${action}/`, {
+            // Use the correct endpoint for live scraper
+            const endpoint = action === 'start'
+                ? '/admin21/scraper_module/api/live-scraper/start/'
+                : '/admin21/scraper_module/api/live-scraper/stop/';
+
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': getCookie('csrftoken'),
@@ -526,10 +534,10 @@
                     startBtn.classList.add('opacity-50', 'cursor-not-allowed');
                     stopBtn.classList.remove('opacity-50', 'cursor-not-allowed');
 
-                    // Update status indicator
-                    statusIndicator.className = 'w-2 h-2 rounded-full bg-red-500 animate-pulse';
-                    statusText.className = 'text-xs font-bold text-red-500';
-                    statusText.textContent = 'LIVE';
+                    // Update status indicator - using emerald for consistency with main scraper
+                    statusIndicator.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+                    statusText.className = 'text-xs font-bold text-emerald-500';
+                    statusText.textContent = 'RUNNING';
 
                     // Start log updates
                     startLiveLogUpdates();
@@ -553,15 +561,23 @@
                     stopLiveLogUpdates();
                 }
 
+                // Auto-hide message
                 setTimeout(() => {
                     statusDiv.classList.add('hidden');
                 }, 3000);
+
+                // Fetch updated stats
+                fetchScraperStats();
             } else {
                 throw new Error(data.message || 'Unknown error');
             }
         } catch (error) {
             statusDiv.className = 'mb-4 p-3 rounded-lg bg-red-900/30 border border-red-700 text-red-300';
             statusDiv.innerHTML = `<i class="fas fa-exclamation-circle mr-2"></i> Error: ${error.message}`;
+
+            // Reset buttons to current state
+            startBtn.disabled = !liveScraperRunning;
+            stopBtn.disabled = liveScraperRunning;
 
             setTimeout(() => {
                 statusDiv.classList.add('hidden');
@@ -895,9 +911,13 @@
         fetchScraperStats();
         fetchRecentMatches();
 
-        // Start log updates if scraper is running
+        // Start log updates if scrapers are running
         if (mainScraperRunning) {
             startMainLogUpdates();
+        }
+
+        if (liveScraperRunning) {
+            startLiveLogUpdates();
         }
     });
 </script>
