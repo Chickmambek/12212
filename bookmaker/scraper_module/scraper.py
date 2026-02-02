@@ -1,7 +1,7 @@
 # scraper/scraper.py
 import asyncio
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
 import logging
 import re
@@ -1340,11 +1340,8 @@ class XStakeScraper:
     async def check_and_cleanup_matches(self, current_matches_data, log_callback=None):
         """
         Check for missing matches and clean them up.
-
-        Args:
-            current_matches_data (list): List of match dictionaries from current scrape
-            log_callback (callable): Function to handle log messages
         """
+        from asgiref.sync import sync_to_async
 
         async def log(msg):
             if log_callback:
@@ -1352,53 +1349,68 @@ class XStakeScraper:
             else:
                 print(msg)
 
-        try:
+        # Wrap the synchronous cleanup logic
+        @sync_to_async
+        def cleanup_sync(matches_data):
             from django.db import transaction
-            from django.db.models import Q
-            from matches.models import Match, Team
+            from matches.models import Match
             from django.utils import timezone
+            from datetime import timedelta
 
-            # Skip if no current matches
-            if not current_matches_data:
-                return
+            try:
+                # Skip if no current matches
+                if not matches_data:
+                    return 0
 
-            # Get all upcoming matches from database
-            db_matches = Match.objects.filter(
-                status='upcoming',
-                match_date__gte=timezone.now() - timedelta(days=1)  # Include recent matches
-            ).select_related('home_team', 'away_team')
+                # Get all upcoming matches from database
+                db_matches = Match.objects.filter(
+                    status='upcoming',
+                    match_date__gte=timezone.now() - timedelta(days=1)
+                ).select_related('home_team', 'away_team')
 
-            # Create set of current match identifiers
-            current_identifiers = set()
-            for match_data in current_matches_data:
-                identifier = f"{match_data['home_team']}_{match_data['away_team']}_{match_data['match_datetime'].strftime('%Y%m%d')}"
-                current_identifiers.add(identifier)
+                # Create set of current match identifiers
+                current_identifiers = set()
+                for match_data in matches_data:
+                    identifier = f"{match_data['home_team']}_{match_data['away_team']}_{match_data['match_datetime'].strftime('%Y%m%d')}"
+                    current_identifiers.add(identifier)
 
-            # Find matches in DB that are not in current scrape
-            matches_to_remove = []
-            for match in db_matches:
-                db_identifier = f"{match.home_team.name}_{match.away_team.name}_{match.match_date.strftime('%Y%m%d')}"
+                # Find matches in DB that are not in current scrape
+                matches_to_remove = []
+                for match in db_matches:
+                    db_identifier = f"{match.home_team.name}_{match.away_team.name}_{match.match_date.strftime('%Y%m%d')}"
 
-                if db_identifier not in current_identifiers:
-                    # Check if this match is within the next 24 hours
-                    time_until_match = (match.match_date - timezone.now()).total_seconds()
+                    if db_identifier not in current_identifiers:
+                        # Check if this match is within the next 24 hours
+                        time_until_match = (match.match_date - timezone.now()).total_seconds()
 
-                    # Only remove if match is more than 1 hour away
-                    # This prevents removing matches that might be temporarily missing from the page
-                    if time_until_match > 3600:  # 1 hour
-                        matches_to_remove.append(match.id)
+                        # Only remove if match is more than 1 hour away
+                        if time_until_match > 3600:  # 1 hour
+                            matches_to_remove.append(match.id)
 
-            if matches_to_remove:
-                await log(f"   🗑️  Found {len(matches_to_remove)} missing matches to clean up")
+                if matches_to_remove:
+                    # Delete matches
+                    with transaction.atomic():
+                        deleted_count, _ = Match.objects.filter(id__in=matches_to_remove).delete()
+                        return deleted_count
+                return 0
 
-                # Delete matches
-                with transaction.atomic():
-                    deleted_count, _ = Match.objects.filter(id__in=matches_to_remove).delete()
-                    await log(f"   ✅ Removed {deleted_count} missing matches")
+            except Exception as e:
+                print(f"Error in cleanup_sync: {e}")
+                return 0
+
+        try:
+            await log("   🔍 Checking for missing matches to clean up...")
+
+            # Call the sync function
+            deleted_count = await cleanup_sync(current_matches_data)
+
+            if deleted_count > 0:
+                await log(f"   ✅ Removed {deleted_count} missing matches")
+            else:
+                await log("   ✅ No missing matches to remove")
 
         except Exception as e:
             await log(f"   ⚠️ Error checking for missing matches: {e}")
-
 
 @sync_to_async
 def bulk_update_live_data(scraped_data):
@@ -1443,7 +1455,8 @@ def bulk_update_live_data(scraped_data):
 
 
 # Also update your bulk_save_scraped_data function to handle updates better
-async def bulk_save_scraped_data(matches_data):
+@sync_to_async
+def bulk_save_scraped_data(matches_data):
     """
     Bulk save scraped matches to database with intelligent updating.
 

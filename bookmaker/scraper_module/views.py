@@ -15,7 +15,8 @@ from django.db.models import Count, Max, Min
 import os
 from django.conf import settings
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 
 # ============== MAIN SCRAPER VIEWS (EXISTING) ==============
@@ -458,8 +459,10 @@ def get_scraper_stats(request):
         # Calculate time ranges
         now = datetime.now()
         today_start = datetime.combine(now.date(), datetime.min.time())
-        hour_ago = now - timedelta(hours=1)
-        day_ago = now - timedelta(days=1)
+
+        # Functionally identical to timedelta(hours=1) and timedelta(days=1)
+        hour_ago = now - relativedelta(hours=1)
+        day_ago = now - relativedelta(days=1)
 
         # Database statistics
         total_matches = Match.objects.count()
