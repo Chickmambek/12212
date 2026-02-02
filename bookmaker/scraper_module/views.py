@@ -15,8 +15,7 @@ from django.db.models import Count, Max, Min
 import os
 from django.conf import settings
 import json
-from datetime import datetime
-import timedelta
+from datetime import datetime, timedelta
 
 
 # ============== MAIN SCRAPER VIEWS (EXISTING) ==============
