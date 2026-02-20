@@ -27,8 +27,8 @@ RUN pip install gunicorn
 # Install Playwright and its dependencies
 # This is crucial for the scraper to work inside Docker
 RUN pip install playwright
-RUN playwright install chromium
-RUN playwright install-deps
+#RUN playwright install chromium
+#RUN playwright install-deps
 
 # Copy project
 COPY . /app/
