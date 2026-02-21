@@ -490,8 +490,14 @@ class XStakeScraper:
                         # Clean up numeric odds
                         for odd_type in ['home_odds', 'draw_odds', 'away_odds']:
                             try:
-                                m[odd_type] = float(m[odd_type]) if m[odd_type] else None
-                            except:
+                                raw_val = m[odd_type]
+                                if raw_val:
+                                    # Remove any non-numeric characters except the decimal point
+                                    clean_val = "".join(c for c in str(raw_val) if c.isdigit() or c == '.')
+                                    m[odd_type] = float(clean_val) if clean_val else None
+                                else:
+                                    m[odd_type] = None
+                            except (ValueError, TypeError):
                                 m[odd_type] = None
 
                         # ---> ADD THESE 3 LINES <---
