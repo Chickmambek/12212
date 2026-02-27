@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block title %}Stake Settings - XBet{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Quick Bet Settings</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="stakeSettingsForm">
+                        {% csrf_token %}
+                        
+                        <div class="form-group mb-3">
+                            <label for="default_stake">Default Stake Amount</label>
+                            <div class="input-group">
+                                <span class="input-group-text">{{ user.profile.currency }}</span>
+                                <input type="number" 
+                                       step="0.01" 
+                                       min="0.01" 
+                                       class="form-control" 
+                                       id="default_stake" 
+                                       name="default_stake"
+                                       value="{{ user.profile.default_stake|default:10.00 }}"
+                                       required>
+                            </div>
+                            <small class="form-text text-muted">
+                                This amount will be used for quick bets when you hold Shift and click a bet button.
+                            </small>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label>Quick Bet Balance Check</label>
+                            <div class="alert alert-info">
+                                <strong>Current Balance:</strong> 
+                                <span class="user-balance">{{ user.profile.balance }}</span> 
+                                {{ user.profile.currency }}
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label>Quick Bet Shortcuts</label>
+                            <ul class="list-group">
+                                <li class="list-group-item">
+                                    <kbd>Shift</kbd> + Click on any bet button = Quick bet with default stake
+                                </li>
+                            </ul>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block">
+                            Save Settings
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Bet Tips</h5>
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li>Quick bets use your default stake amount automatically</li>
+                        <li>Hold <kbd>Shift</kbd> and click any bet button to place a quick bet</li>
+                        <li>Your balance is checked before placing the bet</li>
+                        <li>Quick bets are only available for live and upcoming matches</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('stakeSettingsForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const defaultStake = document.getElementById('default_stake').value;
+    
+    fetch('{% url "stake_settings" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ default_stake: defaultStake })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Stake settings saved successfully!', 'success');
+        } else {
+            showNotification(data.error || 'Failed to save settings', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('An error occurred', 'error');
+    });
+});
+</script>
+{% endblock %}
