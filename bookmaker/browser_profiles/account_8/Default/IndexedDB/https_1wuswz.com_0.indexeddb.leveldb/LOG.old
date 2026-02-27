@@ -1,0 +1,14 @@
+2026/02/23-13:44:26.435 110c Reusing MANIFEST C:\Users\ppap0\PycharmProjects\xbet\bookmaker\browser_profiles\account_8\Default\IndexedDB\https_1wuswz.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/02/23-13:44:26.436 110c Recovering log #260
+2026/02/23-13:44:26.436 110c Reusing old log C:\Users\ppap0\PycharmProjects\xbet\bookmaker\browser_profiles\account_8\Default\IndexedDB\https_1wuswz.com_0.indexeddb.leveldb/000260.log 
+2026/02/23-13:44:26.436 110c Delete type=2 #258
+2026/02/23-13:44:26.445 50d0 Level-0 table #265: started
+2026/02/23-13:44:26.449 50d0 Level-0 table #265: 638 bytes OK
+2026/02/23-13:44:26.451 50d0 Delete type=0 #260
+2026/02/23-13:44:26.451 110c Manual compaction at level-0 from '\x00G\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00H\x00\x00\x00' @ 0 : 0; will stop at '\x00G\x00\x00\x05' @ 1337 : 1
+2026/02/23-13:44:26.451 110c Compacting 1@0 + 1@1 files
+2026/02/23-13:44:26.454 110c Generated table #266@0: 15 keys, 663 bytes
+2026/02/23-13:44:26.454 110c Compacted 1@0 + 1@1 files => 663 bytes
+2026/02/23-13:44:26.455 110c compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/02/23-13:44:26.456 110c Delete type=2 #265
+2026/02/23-13:44:26.456 110c Manual compaction at level-0 from '\x00G\x00\x00\x05' @ 1337 : 1 .. '\x00H\x00\x00\x00' @ 0 : 0; will stop at (end)
